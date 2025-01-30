@@ -42,6 +42,7 @@ import * as UiSharedDeps from '@osd/ui-shared-deps';
 
 import { Bundle, BundleRefs, WorkerConfig } from '../common';
 import { BundleRefsPlugin } from './bundle_refs_plugin';
+// import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 
 const BABEL_PRESET_PATH = require.resolve('@osd/babel-preset/webpack_preset');
 
@@ -58,7 +59,7 @@ export function getWebpackConfig(bundle: Bundle, bundleRefs: BundleRefs, worker:
 
     devtool: worker.dist ? false : '#cheap-source-map',
     profile: worker.profileWebpack,
-
+    // profile: true,
     output: {
       path: bundle.outputDir,
       filename: `${bundle.id}.${bundle.type}.js`,
@@ -82,6 +83,12 @@ export function getWebpackConfig(bundle: Bundle, bundleRefs: BundleRefs, worker:
       new CleanWebpackPlugin(),
       new BundleRefsPlugin(bundle, bundleRefs),
       ...(bundle.banner ? [new webpack.BannerPlugin({ banner: bundle.banner, raw: true })] : []),
+      // new BundleAnalyzerPlugin({
+      //   analyzerMode: 'json',
+      //   generateStatsFile: true,
+      //   statsFilename: 'bundle-analysis.json',
+      //   openAnalyzer: false, // Prevents UI pop-up in CI
+      // }),
     ],
 
     module: {

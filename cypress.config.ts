@@ -6,6 +6,8 @@
 import { defineConfig } from 'cypress';
 import webpackPreprocessor from '@cypress/webpack-preprocessor';
 
+import { lighthouse, prepareAudit } from '@cypress-audit/lighthouse';
+
 module.exports = defineConfig({
   defaultCommandTimeout: 60000,
   requestTimeout: 60000,
@@ -75,6 +77,14 @@ function setupNodeEvents(
       webpackOptions,
     })
   );
+
+  on('before:browser:launch', (launchOptions) => {
+    prepareAudit(launchOptions);
+  });
+
+  on('task', {
+    lighthouse: lighthouse(),
+  });
 
   return config;
 }

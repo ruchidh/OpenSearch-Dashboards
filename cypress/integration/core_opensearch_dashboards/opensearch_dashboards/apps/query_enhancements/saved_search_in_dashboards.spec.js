@@ -71,6 +71,15 @@ export const runSavedSearchTests = () => {
       cy.deleteIndex(INDEX_WITH_TIME_2);
     });
 
+    it('Should audit the component performance', () => {
+      cy.lighthouse({
+        performance: 85, // Minimum performance score required
+        accessibility: 90,
+        'best-practices': 80,
+        seo: 80,
+      });
+    });
+
     it('Load a saved search', () => {
       const config = generateSavedTestConfiguration(
         INDEX_PATTERN_WITH_TIME,

@@ -7,6 +7,7 @@ import '../utils/commands';
 import '../utils/apps/commands';
 import '../utils/dashboards/workspace-plugin/commands';
 import '../utils/dashboards/commands';
+import '@cypress-audit/lighthouse/commands';
 
 // TODO: Remove this after https://github.com/opensearch-project/OpenSearch-Dashboards/issues/5476 is resolved
 const scopedHistoryNavigationError = /^[^(ScopedHistory instance has fell out of navigation scope)]/;

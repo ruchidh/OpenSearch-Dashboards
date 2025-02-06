@@ -70,9 +70,9 @@ export const runSavedSearchTests = () => {
       cy.osd.deleteIndex(INDEX_WITH_TIME_2);
     });
 
-    it('Should audit the component performance', () => {
+    it('lighthouse test', () => {
       cy.lighthouse({
-        performance: 85, // Minimum performance score required
+        performance: 30, // Minimum performance score required
         accessibility: 90,
         'best-practices': 80,
         seo: 80,

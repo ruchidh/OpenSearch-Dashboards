@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import '@cypress-audit/lighthouse/commands';
+
 // --- Typed commands --
 
 Cypress.Commands.add('getElementByTestId', (testId, options = {}) => {

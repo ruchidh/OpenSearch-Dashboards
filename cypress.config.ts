@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { defineConfig } from 'cypress';
 import webpackPreprocessor from '@cypress/webpack-preprocessor';
-import { prepareAudit } from '@cypress-audit/lighthouse';
+import { lighthouse, prepareAudit } from '@cypress-audit/lighthouse';
 
 module.exports = defineConfig({
   defaultCommandTimeout: 60000,
@@ -117,6 +117,16 @@ function setupNodeEvents(
 
       return null;
     },
+
+    lighthouse: lighthouse((report) => {
+      const reportDir = './cypress/lighthouse';
+      const reportPath = `${reportDir}/lighthouse_report_${Date.now()}.json`;
+      if (!fs.existsSync(reportDir)) {
+        fs.mkdirSync(reportDir, { recursive: true });
+      }
+      fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+      return report;
+    }),
   });
 
   return config;

@@ -9,11 +9,8 @@ import {
   INDEX_WITH_TIME_2,
   PATHS,
 } from '../../../../../utils/constants';
-import { getRandomizedWorkspaceName } from '../../../../../utils/apps/query_enhancements/shared';
 
 import { prepareTestSuite } from '../../../../../utils/helpers';
-
-const workspaceName = getRandomizedWorkspaceName();
 
 export const runSavedSearchTests = () => {
   describe('Performance testing', () => {
@@ -40,16 +37,29 @@ export const runSavedSearchTests = () => {
       cy.visit('/app/home');
     });
 
-    afterEach(() => {
-      // No need to explicitly delete all saved queries as deleting the workspace will delete associated saved queries
-      cy.deleteWorkspaceByName(workspaceName);
-      cy.osd.deleteDataSourceByName(DATASOURCE_NAME);
-    });
-
     it('should test discover page compoonent performance', () => {
       cy.visit('/app/discover');
-      cy.measureComponentPerformance('discover', 'sidebarPanel');
-      cy.getElementByTestId('sidebarPanel').should('be.visible');
+      // cy.measureComponentPerformance('discover', 'sidebarPanel');
+      // cy.getElementByTestId('sidebarPanel').should('be.visible');
+      cy.config('defaultCommandTimeout', 180000);
+      cy.config('taskTimeout', 200000);
+
+      cy.lighthouse(
+        {
+          performance: 30,
+          accessibility: 90,
+        },
+        {
+          formFactor: 'desktop',
+          screenEmulation: {
+            mobile: false,
+            disable: false,
+            width: cy.config('viewportWidth'),
+            height: cy.config('viewportHeight'),
+            deviceScaleRatio: 1,
+          },
+        }
+      );
     });
   });
 };

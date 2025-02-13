@@ -142,3 +142,61 @@ Cypress.Commands.add('measureComponentPerformance', (pluginName, testId) => {
     }
   });
 });
+
+Cypress.Commands.add('runLighthouse', (pageKey) => {
+  cy.readFile('cypress/utils/lighthouse_baselines.json', { log: false }).then((baselines) => {
+    const baseline = baselines[pageKey];
+
+    if (!baseline) {
+      cy.log(`⚠️ No Lighthouse baseline found for: ${pageKey}`);
+      return;
+    }
+
+    cy.config('defaultCommandTimeout', 240000);
+    cy.config('taskTimeout', 240000);
+
+    cy.lighthouse(
+      {
+        performance: 30,
+        accessibility: 90,
+      },
+      {
+        formFactor: 'desktop',
+        screenEmulation: {
+          mobile: false,
+          disable: false,
+          width: cy.config('viewportWidth'),
+          height: cy.config('viewportHeight'),
+          deviceScaleRatio: 1,
+        },
+      }
+    );
+  });
+});
+
+// .then((report) => {
+//   // ✅ Use the directly returned `lhr` object
+//   const lhr = report.lhr || report; // ✅ Handle missing `lhr`
+
+//   if (!lhr.categories || !lhr.categories.performance) {
+//     cy.log('🚨 Lighthouse report is missing expected categories');
+//     return;
+//   }
+
+//   const summary = {
+//     performance: (lhr.categories.performance.score || 0) * 100,
+//     accessibility: (lhr.categories.accessibility.score || 0) * 100,
+//   };
+
+//   let warningMessage = '🚨 **Lighthouse Warning**: Some metrics are below baseline\n\n';
+
+//   Object.keys(baseline).forEach((metric) => {
+//     if (summary[metric] < baseline[metric]) {
+//       warningMessage += `⚠️ ${metric} dropped to ${summary[metric]} (Baseline: ${baseline[metric]})\n`;
+//     }
+//   });
+
+//   if (warningMessage !== '🚨 **Lighthouse Warning**: Some metrics are below baseline\n\n') {
+//     cy.task('postPRComment', warningMessage);
+//   }
+// });

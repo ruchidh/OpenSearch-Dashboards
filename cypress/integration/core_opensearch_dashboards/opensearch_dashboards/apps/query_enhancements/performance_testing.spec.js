@@ -41,25 +41,27 @@ export const runSavedSearchTests = () => {
       cy.visit('/app/discover');
       // cy.measureComponentPerformance('discover', 'sidebarPanel');
       // cy.getElementByTestId('sidebarPanel').should('be.visible');
-      cy.config('defaultCommandTimeout', 180000);
-      cy.config('taskTimeout', 200000);
+      // cy.config('defaultCommandTimeout', 180000);
+      // cy.config('taskTimeout', 200000);
 
-      cy.lighthouse(
-        {
-          performance: 30,
-          accessibility: 90,
-        },
-        {
-          formFactor: 'desktop',
-          screenEmulation: {
-            mobile: false,
-            disable: false,
-            width: cy.config('viewportWidth'),
-            height: cy.config('viewportHeight'),
-            deviceScaleRatio: 1,
-          },
-        }
-      );
+      // cy.lighthouse(
+      //   {
+      //     performance: 30,
+      //     accessibility: 90,
+      //   },
+      //   {
+      //     formFactor: 'desktop',
+      //     screenEmulation: {
+      //       mobile: false,
+      //       disable: false,
+      //       width: cy.config('viewportWidth'),
+      //       height: cy.config('viewportHeight'),
+      //       deviceScaleRatio: 1,
+      //     },
+      //   }
+      // );
+
+      cy.runLighthouse('discover');
     });
   });
 };

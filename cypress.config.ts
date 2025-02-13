@@ -125,7 +125,7 @@ function setupNodeEvents(
         fs.mkdirSync(reportDir, { recursive: true });
       }
       fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-      return report;
+      return reportPath;
     }),
   });
 

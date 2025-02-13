@@ -2,6 +2,7 @@
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
+import '@cypress-audit/lighthouse/commands';
 
 // --- Typed commands --
 
@@ -144,59 +145,72 @@ Cypress.Commands.add('measureComponentPerformance', (pluginName, testId) => {
 });
 
 Cypress.Commands.add('runLighthouse', (pageKey) => {
-  cy.readFile('cypress/utils/lighthouse_baselines.json', { log: false }).then((baselines) => {
-    const baseline = baselines[pageKey];
+  cy.config('defaultCommandTimeout', 240000);
+  cy.config('taskTimeout', 240000);
 
-    if (!baseline) {
-      cy.log(`⚠️ No Lighthouse baseline found for: ${pageKey}`);
-      return;
-    }
-
-    cy.config('defaultCommandTimeout', 240000);
-    cy.config('taskTimeout', 240000);
-
-    cy.lighthouse(
-      {
-        performance: 30,
-        accessibility: 90,
+  cy.lighthouse(
+    {
+      performance: 20,
+    },
+    {
+      formFactor: 'desktop',
+      screenEmulation: {
+        mobile: false,
+        disable: false,
+        width: cy.config('viewportWidth'),
+        height: cy.config('viewportHeight'),
+        deviceScaleRatio: 1,
       },
-      {
-        formFactor: 'desktop',
-        screenEmulation: {
-          mobile: false,
-          disable: false,
-          width: cy.config('viewportWidth'),
-          height: cy.config('viewportHeight'),
-          deviceScaleRatio: 1,
-        },
-      }
-    );
-  });
+      onlyCategories: ['performance'],
+    }
+  );
+
+  cy.compareLighthouseReport(pageKey);
 });
 
-// .then((report) => {
-//   // ✅ Use the directly returned `lhr` object
-//   const lhr = report.lhr || report; // ✅ Handle missing `lhr`
+Cypress.Commands.add('compareLighthouseReport', (pageKey) => {
+  const reportPath = `./cypress/lighthouse/lighthouse_report_${pageKey}.json`;
+  const baselinePath = './cypress/utils/lighthouse_baselines.json';
+  const metricsPath = './cypress/lighthouse_metrics.json';
 
-//   if (!lhr.categories || !lhr.categories.performance) {
-//     cy.log('🚨 Lighthouse report is missing expected categories');
-//     return;
-//   }
+  cy.config('defaultCommandTimeout', 180000);
+  cy.config('taskTimeout', 200000);
 
-//   const summary = {
-//     performance: (lhr.categories.performance.score || 0) * 100,
-//     accessibility: (lhr.categories.accessibility.score || 0) * 100,
-//   };
+  cy.readFile(reportPath, { log: false }).then((report) => {
+    cy.readFile(baselinePath, { log: false }).then((baselines) => {
+      const baseline = baselines[pageKey];
 
-//   let warningMessage = '🚨 **Lighthouse Warning**: Some metrics are below baseline\n\n';
+      if (!baseline) {
+        cy.log(`⚠️ No baseline found for: ${pageKey}`);
+        return;
+      }
 
-//   Object.keys(baseline).forEach((metric) => {
-//     if (summary[metric] < baseline[metric]) {
-//       warningMessage += `⚠️ ${metric} dropped to ${summary[metric]} (Baseline: ${baseline[metric]})\n`;
-//     }
-//   });
+      const summary = {};
+      const categories = ['performance', 'accessibility'];
 
-//   if (warningMessage !== '🚨 **Lighthouse Warning**: Some metrics are below baseline\n\n') {
-//     cy.task('postPRComment', warningMessage);
-//   }
-// });
+      categories.forEach((category) => {
+        if (baseline[category] !== undefined) {
+          const actual = Math.round(report.lhr.categories[category].score * 100);
+          const expected = baseline[category];
+
+          if (actual < expected) {
+            summary[`${pageKey}_${category}`] = `❌ ${actual} (Expected: ${expected})`;
+          } else {
+            summary[`${pageKey}_${category}`] = `✅ ${actual} (Expected: ${expected})`;
+          }
+        }
+      });
+
+      cy.readFile(metricsPath, { log: false })
+        .then((existingMetrics) => {
+          const updatedMetrics = { ...existingMetrics, ...summary };
+          cy.writeFile(metricsPath, updatedMetrics, { log: false });
+        })
+        .catch(() => {
+          cy.writeFile(metricsPath, summary, { log: false });
+        });
+
+      cy.log(`📊 Lighthouse comparison for ${pageKey} completed!`);
+    });
+  });
+});

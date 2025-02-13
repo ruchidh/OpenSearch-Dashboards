@@ -120,12 +120,30 @@ function setupNodeEvents(
 
     lighthouse: lighthouse((report) => {
       const reportDir = './cypress/lighthouse';
-      const reportPath = `${reportDir}/lighthouse_report_${Date.now()}.json`;
       if (!fs.existsSync(reportDir)) {
         fs.mkdirSync(reportDir, { recursive: true });
       }
+
+      let pageUrl = report?.lhr?.finalUrl || '';
+
+      if (!pageUrl) {
+        // console.error("❌ Error: Lighthouse report does not contain a valid 'finalUrl'.");
+        return report;
+      }
+
+      // Trim whitespace and ensure the URL is correctly formatted
+      pageUrl = pageUrl.trim();
+
+      const pageKey = pageUrl.includes('/app/') ? pageUrl.split('/app/')[1].split('/')[0] : '';
+
+      // Remove special characters from pageKey to make it a valid filename
+      const sanitizedPageKey = pageKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+      const reportPath = `${reportDir}/lighthouse_report_${sanitizedPageKey}.json`;
+
       fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-      return reportPath;
+
+      return report;
     }),
   });
 

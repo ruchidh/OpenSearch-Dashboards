@@ -386,6 +386,12 @@ jobs:
           retention-days: 1
           overwrite: true
 
+      - name: Fail Performance Metrics Check
+        if: env.PERFORMANCE_MESSAGE != 'No performance issues detected 🎉'
+        run: |
+          echo "Performance metrics exceeded the threshold. Blocking PR merge!"
+          exit 1
+
   add-comment:
     needs: [cypress-tests]
     if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.pr_number != '' }}

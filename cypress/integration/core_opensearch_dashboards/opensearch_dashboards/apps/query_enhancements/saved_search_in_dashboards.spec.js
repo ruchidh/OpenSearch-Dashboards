@@ -51,6 +51,7 @@ export const runSavedSearchTests = () => {
       });
 
       // Create workspace
+
       cy.deleteAllWorkspaces();
       cy.visit('/app/home');
       cy.osd.createInitialWorkspaceWithDataSource(DATASOURCE_NAME, workspaceName);
@@ -82,6 +83,12 @@ export const runSavedSearchTests = () => {
       loadSavedSearchFromDashboards(config, workspaceName);
 
       // verify that there are results
+      cy.measureComponentPerformance({
+        page: 'discover',
+        componentTestId: 'docTableField',
+        eventName: 'onLoadSavedSearch',
+        isDynamic: false,
+      });
       cy.getElementByTestId('docTableField').should('be.visible');
 
       const expectedHitCount = getExpectedHitCount(config.datasetType, config.language);

@@ -66,6 +66,13 @@ interface Props extends QueryEditorProps {
   opensearchDashboards: OpenSearchDashboardsReactContextValue<IDataPluginServices>;
 }
 
+const SUGGEST_STATE = {
+  Hidden: 0,
+  Loading: 1,
+  Open: 2,
+  Details: 3,
+};
+
 export const QueryEditorUI: React.FC<Props> = (props) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [lineCount, setLineCount] = useState<number | undefined>(undefined);
@@ -304,6 +311,8 @@ export const QueryEditorUI: React.FC<Props> = (props) => {
           query: editor.getValue(),
         };
 
+        // console.log('onsubmit DEFAULT');
+
         onSubmit(newQuery, timefilter.getTime());
       });
 
@@ -361,13 +370,44 @@ export const QueryEditorUI: React.FC<Props> = (props) => {
       inputRef.current = editor;
 
       editor.addCommand(monaco.KeyCode.Enter, () => {
+        // const suggestController = editor.getContribution('editor.contrib.suggestController') as any;
+        // const suggestModel = suggestController?.model;
+
+        // const isSuggestVisible =
+        //   suggestModel?.state === SUGGEST_STATE.Open ||
+        //   suggestModel?.state === SUGGEST_STATE.Details;
+
+        // console.log(suggestModel?.state, 'suggestModel?.state');
+
+        // console.log('isSuggestVisible', isSuggestVisible);
+
+        // if (isSuggestVisible) {
+        //   console.log('---isSuggestVisible', isSuggestVisible);
+        //   // Accept suggestion
+        //   suggestController?.acceptSelectedSuggestion?.();
+        //   return;
+        // }
+
         const newQuery = {
           ...queryRef.current,
           query: editor.getValue(),
         };
 
+        // console.log('onsubmit');
+
         onSubmit(newQuery, timefilter.getTime());
+        editor.getDomNode()?.blur();
       });
+
+      // Shift+Enter in multiline: always insert newline
+      // editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => {
+      //   const isMultiline = editor.getOption(monaco.editor.EditorOption.wordWrap) !== 'off';
+      //   console.log('isMultiline', isMultiline);
+      //   if (isMultiline) {
+      //     console.log('isMultiline', isMultiline);
+      //     editor.trigger('keyboard', 'type', { text: '\n' });
+      //   }
+      // });
     },
     provideCompletionItems,
     prepend: props.prepend,

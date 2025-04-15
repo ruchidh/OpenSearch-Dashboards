@@ -38,6 +38,13 @@ import { LIGHT_THEME, DARK_THEME } from './editor_theme';
 
 import './editor.scss';
 
+const SUGGEST_STATE = {
+  Hidden: 0,
+  Loading: 1,
+  Open: 2,
+  Details: 3,
+};
+
 export interface Props {
   /** Width of editor. Defaults to 100%. */
   width?: string | number;
@@ -152,6 +159,45 @@ export class CodeEditor extends React.Component<Props, {}> {
         editor.trigger('keyboard', 'editor.action.triggerSuggest', {});
       });
     }
+
+    editor.onKeyDown((e) => {
+      const suggestController = editor.getContribution('editor.contrib.suggestController') as any;
+      const suggestModel = suggestController?.model;
+
+      const isSuggestVisible =
+        suggestModel?.state === SUGGEST_STATE.Open || suggestModel?.state === SUGGEST_STATE.Details;
+      // console.log('code editor-----');
+
+      if (e.keyCode === monaco.KeyCode.Enter) {
+        // console.log('code editor');
+        if (isSuggestVisible) {
+          // Accept suggestion
+          // console.log('code editor suggest ');
+          suggestController?.acceptSelectedSuggestion?.();
+          e.preventDefault();
+          return;
+        }
+
+        // Run the query
+        this.runQuery();
+        e.preventDefault();
+      }
+
+      if (e.keyCode === monaco.KeyCode.Enter && e.shiftKey) {
+        // Allow newline in multiline mode
+        const isMultiline = editor.getOption(monaco.editor.EditorOption.wordWrap) !== 'off';
+        // console.log('isMultiline keycode', isMultiline);
+        if (isMultiline) {
+          editor.trigger('keyboard', 'type', { text: '\n' });
+          e.preventDefault();
+        }
+      }
+    });
+  };
+
+  runQuery = () => {
+    // Your logic to run the query goes here
+    // console.log('Running query...');
   };
 
   render() {

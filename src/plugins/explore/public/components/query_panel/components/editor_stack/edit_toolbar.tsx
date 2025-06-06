@@ -16,7 +16,7 @@ interface EditToobarProps {
 }
 
 export const EditToobar: React.FC<EditToobarProps> = ({
-  className = 'promptEditor__editOverlay',
+  className = 'promptEditor__editTool',
   onClearEditor,
   onEditClick,
   editText,

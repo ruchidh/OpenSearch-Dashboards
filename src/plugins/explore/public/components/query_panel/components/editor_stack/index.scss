@@ -49,7 +49,7 @@
         }
       }
 
-      .promptEditor__editOverlay {
+      .promptEditor__editTool {
         position: absolute;
         right: 4px;
         bottom: -7px;
@@ -171,7 +171,7 @@
           display: none !important;
         }
 
-        .queryEditor__editOverlay {
+        .queryEditor__editTool {
           position: absolute;
           right: 4px;
           top: -12px;

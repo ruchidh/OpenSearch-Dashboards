@@ -185,7 +185,7 @@ export const ReusableEditor: React.FC<ReusableEditorProps> = ({
 
         {isReadOnly && (
           <EditToobar
-            className={`${editorClassPrefix}__editOverlay`}
+            className={`${editorClassPrefix}__editTool`}
             onClearEditor={onClear}
             onEditClick={handleEditClick}
             editText={editTextI18n}

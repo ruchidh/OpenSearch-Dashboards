@@ -3,20 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import {
-  EuiText,
-  EuiTable,
-  EuiTableHeader,
-  EuiTableHeaderCell,
-  EuiTableBody,
-  EuiTableRow,
-  EuiTableRowCell,
-  EuiButton,
-  EuiFieldSearch,
-  EuiIcon,
-  EuiToolTip,
-} from '@elastic/eui';
+import React, { useState, useMemo } from 'react';
+import { EuiText, EuiDataGrid, EuiButton, EuiFieldSearch, EuiIcon, EuiToolTip } from '@elastic/eui';
 import './preview_table.scss';
 
 interface PreviewComponentProps {
@@ -35,34 +23,73 @@ export const PreviewComponent = ({
   existingMapping,
 }: PreviewComponentProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+
   previewData = previewData.flat();
   const totalRows = previewData?.length;
   const loadedRows = Math.min(visibleRows, totalRows);
 
-  const filteredData = previewData?.filter((row) =>
-    Object.values(row).some(
-      (value) =>
-        typeof value === 'string' && value.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+  const filteredData = useMemo(
+    () =>
+      previewData?.filter((row) =>
+        Object.values(row).some(
+          (value) =>
+            typeof value === 'string' && value.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      ),
+    [previewData, searchQuery]
   );
 
-  const getCellStyle = (field: string) => {
-    const predictedType = predictedMapping?.properties?.[field]?.type;
-    const existingType = existingMapping?.properties?.[field]?.type;
-    if (predictedType && existingType && predictedType !== existingType) {
-      return { color: '#BD271E' };
-    }
-    return {};
-  };
+  // DataGrid columns
+  const columns = useMemo(() => {
+    if (!filteredData || filteredData.length === 0) return [];
+    return Object.keys(filteredData[0]).map((key) => ({
+      id: key,
+      display: key,
+    }));
+  }, [filteredData]);
 
-  const getTooltipContent = (field: string) => {
-    const predictedType = predictedMapping?.properties?.[field]?.type;
-    const existingType = existingMapping?.properties?.[field]?.type;
-    if (predictedType && existingType && predictedType !== existingType) {
-      return `Predicted type: ${predictedType}, Existing type: ${existingType}`;
-    }
-    return '';
-  };
+  const getCellStyle = React.useCallback(
+    (field: string) => {
+      const predictedType = predictedMapping?.properties?.[field]?.type;
+      const existingType = existingMapping?.properties?.[field]?.type;
+      if (predictedType && existingType && predictedType !== existingType) {
+        return { color: '#BD271E' };
+      }
+      return {};
+    },
+    [predictedMapping, existingMapping]
+  );
+
+  const getTooltipContent = React.useCallback(
+    (field: string) => {
+      const predictedType = predictedMapping?.properties?.[field]?.type;
+      const existingType = existingMapping?.properties?.[field]?.type;
+      if (predictedType && existingType && predictedType !== existingType) {
+        return `Predicted type: ${predictedType}, Existing type: ${existingType}`;
+      }
+      return '';
+    },
+    [predictedMapping, existingMapping]
+  );
+
+  // DataGrid cell renderer
+  const renderCellValue = useMemo(() => {
+    return ({ rowIndex, columnId }: { rowIndex: number; columnId: string }) => {
+      const row = filteredData?.[rowIndex];
+      if (!row) return null;
+      const tooltip = getTooltipContent(columnId);
+      return (
+        <span style={getCellStyle(columnId)}>
+          {row[columnId]}
+          {tooltip && (
+            <EuiToolTip position="top" content={tooltip}>
+              <EuiIcon type="alert" color="danger" style={{ marginLeft: '5px' }} />
+            </EuiToolTip>
+          )}
+        </span>
+      );
+    };
+  }, [filteredData, getCellStyle, getTooltipContent]);
 
   return (
     <>
@@ -80,38 +107,21 @@ export const PreviewComponent = ({
           className="customSearchBar"
         />
       </div>
-      <div style={{ height: 'calc(100% - 40px)', overflowY: 'auto' }}>
-        <EuiTable>
-          <EuiTableHeader>
-            <EuiTableHeaderCell>#</EuiTableHeaderCell>
-            {previewData?.length > 0 ? (
-              Object.keys(previewData[0]).map((key) => (
-                <EuiTableHeaderCell key={key}>{key}</EuiTableHeaderCell>
-              ))
-            ) : (
-              <EuiTableHeaderCell>Column</EuiTableHeaderCell>
-            )}
-          </EuiTableHeader>
-          <EuiTableBody>
-            {totalRows > 0 &&
-              filteredData?.slice(0, loadedRows).map((row, rowIndex) => (
-                <EuiTableRow key={rowIndex}>
-                  <EuiTableRowCell>{rowIndex + 1}</EuiTableRowCell>
-                  {Object.keys(row).map((field, colIndex) => (
-                    <EuiTableRowCell key={colIndex} style={getCellStyle(field)}>
-                      {row[field]}
-                      {getTooltipContent(field) && (
-                        <EuiToolTip position="top" content={getTooltipContent(field)}>
-                          <EuiIcon type="alert" color="danger" style={{ marginLeft: '5px' }} />
-                        </EuiToolTip>
-                      )}
-                    </EuiTableRowCell>
-                  ))}
-                </EuiTableRow>
-              ))}
-          </EuiTableBody>
-        </EuiTable>
-
+      <div style={{ height: '400px', width: '100%' }}>
+        <EuiDataGrid
+          aria-label="Preview Data Grid"
+          columns={columns}
+          columnVisibility={{
+            visibleColumns: columns.map((c) => c.id),
+            setVisibleColumns: () => {},
+          }}
+          rowCount={filteredData?.length || 0}
+          renderCellValue={renderCellValue}
+          inMemory={{ level: 'enhancements' }}
+          style={{ minHeight: 300 }}
+          toolbarVisibility={true}
+          pagination={undefined}
+        />
         {totalRows === 0 && (
           <EuiText textAlign="center" style={{ marginTop: '20px' }}>
             <p>No data to display. Please upload a file to see the preview.</p>

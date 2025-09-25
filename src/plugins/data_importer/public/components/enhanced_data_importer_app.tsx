@@ -308,6 +308,44 @@ export const EnhancedDataImporterPluginApp = ({
         const lines = text.split('\n').filter((line) => line.trim());
         const rows = lines.map((line) => JSON.parse(line));
         setFullFileData(rows);
+      } else if (fileExtension === '.txt') {
+        // Parse TXT files (similar to server-side TXT processor logic)
+        const lines = text.split('\n');
+        const rows = lines
+          .map((line, index) => {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) return null;
+
+            // Try to extract timestamp, level, and message from common log formats
+            const timestampRegex = /^(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})/;
+            const levelRegex = /\[(INFO|DEBUG|WARN|ERROR|SUCCESS|FATAL|TRACE)\]/i;
+
+            const timestampMatch = trimmedLine.match(timestampRegex);
+            const levelMatch = trimmedLine.match(levelRegex);
+
+            let timestamp = timestampMatch ? timestampMatch[1] : new Date().toISOString();
+            let level = levelMatch ? levelMatch[1].toUpperCase() : 'INFO';
+
+            // Remove timestamp and level from message if found
+            let message = trimmedLine;
+            if (timestampMatch) {
+              message = message.replace(timestampMatch[0], '').trim();
+            }
+            if (levelMatch) {
+              message = message.replace(levelMatch[0], '').trim();
+            }
+
+            return {
+              '@timestamp': timestamp,
+              level,
+              message: message || trimmedLine,
+              line_number: index + 1,
+              raw_line: trimmedLine
+            };
+          })
+          .filter(row => row !== null);
+
+        setFullFileData(rows);
       }
     } catch (error) {
       console.error('Error parsing file:', error);

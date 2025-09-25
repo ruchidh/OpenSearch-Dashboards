@@ -12,9 +12,10 @@ import { DataImporterPluginSetup, DataImporterPluginStart } from './types';
 import { importFileRoute } from './routes/import_file';
 import { CSVProcessor } from './processors/csv_processor';
 import { importTextRoute } from './routes/import_text';
-import { CSV_FILE_TYPE, JSON_FILE_TYPE, NDJSON_FILE_TYPE, PLUGIN_NAME } from '../common/constants';
+import { CSV_FILE_TYPE, JSON_FILE_TYPE, NDJSON_FILE_TYPE, TXT_FILE_TYPE, PLUGIN_NAME } from '../common/constants';
 import { NDJSONProcessor } from './processors/ndjson_processor';
 import { JSONProcessor } from './processors/json_processor';
+import { TXTProcessor } from './processors/txt_processor';
 import { FileProcessorService } from './processors/file_processor_service';
 import { validateFileTypes } from './utils/util';
 import { previewRoute } from './routes/preview';
@@ -46,6 +47,7 @@ export class DataImporterPlugin
     this.fileProcessors.registerFileProcessor(CSV_FILE_TYPE, new CSVProcessor());
     this.fileProcessors.registerFileProcessor(NDJSON_FILE_TYPE, new NDJSONProcessor());
     this.fileProcessors.registerFileProcessor(JSON_FILE_TYPE, new JSONProcessor());
+    this.fileProcessors.registerFileProcessor(TXT_FILE_TYPE, new TXTProcessor());
 
     // Register server side APIs
     importFileRoute(router, this.config, this.fileProcessors, !!dataSource);

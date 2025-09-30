@@ -23,6 +23,18 @@ export const configSchema = schema.object({
     defaultValue: 10,
     min: 1,
   }),
+  useRedesignedUI: schema.boolean({ defaultValue: true }),
+  enableEnhancedProcessing: schema.boolean({ defaultValue: true }),
+  maxRecordsLimit: schema.number({
+    defaultValue: 100000,
+    min: 1000,
+    max: 1000000,
+  }),
+  defaultChunkSize: schema.number({
+    defaultValue: 1000,
+    min: 100,
+    max: 10000,
+  }),
 });
 
 export type ConfigSchema = TypeOf<typeof configSchema>;

@@ -17,9 +17,15 @@ import { NDJSONProcessor } from './processors/ndjson_processor';
 import { JSONProcessor } from './processors/json_processor';
 import { TXTProcessor } from './processors/txt_processor';
 import { FileProcessorService } from './processors/file_processor_service';
+import { EnhancedFileProcessorService } from './processors/enhanced_file_processor_service';
 import { validateFileTypes } from './utils/util';
 import { previewRoute } from './routes/preview';
 import { catIndicesRoute } from './routes/cat_indices';
+import {
+  registerEnhancedImportFileRoute,
+  registerEnhancedPreviewRoute,
+  registerEnhancedValidationRoute,
+} from './routes/enhanced_import_file';
 
 export interface DataImporterPluginSetupDeps {
   dataSource?: DataSourcePluginSetup;
@@ -28,9 +34,12 @@ export interface DataImporterPluginSetupDeps {
 export class DataImporterPlugin
   implements Plugin<DataImporterPluginSetup, DataImporterPluginStart> {
   private readonly fileProcessors: FileProcessorService = new FileProcessorService();
+  private readonly enhancedFileProcessors: EnhancedFileProcessorService;
   private config: TypeOf<typeof configSchema> | undefined;
 
-  constructor(private readonly initializerContext: PluginInitializerContext) {}
+  constructor(private readonly initializerContext: PluginInitializerContext) {
+    this.enhancedFileProcessors = new EnhancedFileProcessorService(this.initializerContext.logger.get());
+  }
 
   public async setup(
     core: CoreSetup,
@@ -49,11 +58,22 @@ export class DataImporterPlugin
     this.fileProcessors.registerFileProcessor(JSON_FILE_TYPE, new JSONProcessor());
     this.fileProcessors.registerFileProcessor(TXT_FILE_TYPE, new TXTProcessor());
 
+    // Register enhanced file processors
+    this.enhancedFileProcessors.registerFileProcessor(CSV_FILE_TYPE, new CSVProcessor());
+    this.enhancedFileProcessors.registerFileProcessor(NDJSON_FILE_TYPE, new NDJSONProcessor());
+    this.enhancedFileProcessors.registerFileProcessor(JSON_FILE_TYPE, new JSONProcessor());
+    this.enhancedFileProcessors.registerFileProcessor(TXT_FILE_TYPE, new TXTProcessor());
+
     // Register server side APIs
     importFileRoute(router, this.config, this.fileProcessors, !!dataSource);
     importTextRoute(router, this.config, this.fileProcessors, !!dataSource);
     previewRoute(router, this.config, this.fileProcessors, !!dataSource);
     catIndicesRoute(router, !!dataSource);
+
+    // Register enhanced APIs for large dataset handling
+    registerEnhancedImportFileRoute(router, this.enhancedFileProcessors);
+    registerEnhancedPreviewRoute(router, this.enhancedFileProcessors);
+    registerEnhancedValidationRoute(router, this.enhancedFileProcessors);
 
     return {
       registerFileProcessor: (fileType, fileProcessor) => {

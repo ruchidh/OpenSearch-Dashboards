@@ -18,8 +18,6 @@ import {
   EuiButton,
   EuiFilePicker,
   EuiHorizontalRule,
-  EuiButtonIcon,
-  EuiPopover,
 } from '@elastic/eui';
 import { DelimiterSelect } from '../delimiter_select';
 import { ImportTextContentBody } from '../import_text_content';
@@ -123,15 +121,12 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
                 />
               </EuiFormRow>
 
-              {/* GROQ Input - Optional */}
-              <EuiFormRow
-                label="Groq command"
-                helpText="Optional: Enter GROQ queries"
-              >
+              {/* GROQ Input */}
+              <EuiFormRow label="Groq command">
                 <EuiTextArea
                   value={groqInput}
                   onChange={(e) => onGroqInputChange(e.target.value)}
-                  placeholder="Optional: Enter GROQ queries or delimiter settings..."
+                  placeholder="Optional: Enter GROQ queries"
                   rows={4}
                   resize="vertical"
                 />
@@ -168,16 +163,18 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
                 border: '2px dashed #D3DAE6',
                 width: '100%',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
               }}
             >
-              <div style={{
-                textAlign: 'center',
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%'
-              }}>
+              <div
+                style={{
+                  textAlign: 'center',
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
+                }}
+              >
                 <div
                   style={{
                     display: 'flex',
@@ -192,7 +189,7 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
                     display="large"
                     fullWidth={true}
                     aria-label="File picker"
-                    accept={config.enabledFileTypes.map(type => `.${type}`).join(',')}
+                    accept={config.enabledFileTypes.map((type) => `.${type}`).join(',')}
                   />
                 </div>
 
@@ -202,61 +199,15 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
                 </EuiText>
                 <EuiSpacer size="s" />
 
-                <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-                  <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10 }}>
-                    <EuiPopover
-                      button={
-                        <EuiButtonIcon
-                          iconType="questionInCircle"
-                          aria-label="Text editor information"
-                          size="s"
-                          onClick={() => setIsTextEditorInfoOpen(!isTextEditorInfoOpen)}
-                        />
-                      }
-                      isOpen={isTextEditorInfoOpen}
-                      closePopover={() => setIsTextEditorInfoOpen(false)}
-                      panelPaddingSize="m"
-                      anchorPosition="leftCenter"
-                    >
-                      <div style={{ maxWidth: '300px' }}>
-                        <EuiTitle size="xs">
-                          <h4>Text Editor Information</h4>
-                        </EuiTitle>
-                        <EuiSpacer size="s" />
-                        <EuiText size="s">
-                          <p>
-                            <strong>Character Limit:</strong> 1,000,000 characters
-                          </p>
-                          <p>
-                            <strong>Supported Formats:</strong> JSON, CSV, NDJSON, TXT
-                          </p>
-                          <p>
-                            <strong>File Size Equivalent:</strong> ~1MB of text data
-                          </p>
-                          <p>
-                            <strong>Typical Usage:</strong>
-                          </p>
-                          <ul>
-                            <li>Small CSV: ~10,000-50,000 characters</li>
-                            <li>Medium JSON: ~100,000-300,000 characters</li>
-                            <li>Large dataset: Up to 1,000,000 characters</li>
-                          </ul>
-                          <p>
-                            <em>
-                              The editor will show a character counter and highlight when
-                              approaching the limit.
-                            </em>
-                          </p>
-                        </EuiText>
-                      </div>
-                    </EuiPopover>
-                  </div>
+                <div style={{ flex: 1, overflow: 'hidden' }}>
                   <ImportTextContentBody
                     onTextChange={onTextInputChange}
                     enabledFileTypes={config.enabledFileTypes}
                     onFileTypeChange={onTextFileTypeChange}
                     characterLimit={config.maxTextCount}
                     initialFileType={textFileType}
+                    isTextEditorInfoOpen={isTextEditorInfoOpen}
+                    setIsTextEditorInfoOpen={setIsTextEditorInfoOpen}
                   />
                 </div>
               </div>

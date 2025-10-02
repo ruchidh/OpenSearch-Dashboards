@@ -8,13 +8,48 @@ import { IFileProcessor, IngestOptions, ParseOptions, ValidationOptions } from '
 import { isValidObject } from '../utils/util';
 
 export class JSONProcessor implements IFileProcessor {
+
+  /**
+   * Recursively flattens arrays and nested arrays into individual documents
+   */
+  private flattenToDocuments(data: any): Array<Record<string, any>> {
+    const documents: Array<Record<string, any>> = [];
+
+    const processItem = (item: any) => {
+      if (Array.isArray(item)) {
+        // If it's an array, recursively process each item
+        item.forEach(processItem);
+      } else if (item && typeof item === 'object' && isValidObject(item)) {
+        // If it's a valid object, add it as a document
+        documents.push(item);
+      }
+      // Skip primitive values, null, or invalid objects
+    };
+
+    processItem(data);
+    return documents;
+  }
+
   public async validateText(text: string, _: ValidationOptions) {
     if (text.length < 1) {
       return false;
     }
     try {
       const obj = JSON.parse(text);
-      return obj && typeof obj === 'object' && isValidObject(obj);
+
+      // Check if it's a valid single object or can be flattened to valid documents
+      if (obj && typeof obj === 'object') {
+        if (Array.isArray(obj)) {
+          // For arrays, check if we can extract at least one valid document
+          const documents = this.flattenToDocuments(obj);
+          return documents.length > 0;
+        } else {
+          // For single objects, use the existing validation
+          return isValidObject(obj);
+        }
+      }
+
+      return false;
     } catch (e) {
       return false;
     }
@@ -85,13 +120,22 @@ export class JSONProcessor implements IFileProcessor {
         .on('error', (e) => reject(e))
         .on('end', async () => {
           try {
-            const document = JSON.parse(rawData);
-            if (!isValidObject(document)) {
+            const parsedData = JSON.parse(rawData);
+
+            // Use the new flattening logic to handle arrays and nested structures
+            const flattenedDocuments = this.flattenToDocuments(parsedData);
+
+            if (flattenedDocuments.length === 0) {
               reject(
-                new Error(`The following document has empty fields: ${JSON.stringify(document)}`)
+                new Error('No valid documents found in the JSON data')
               );
+              return;
             }
-            documents.push(document);
+
+            // Apply limit if specified
+            const limitedDocuments = limit > 0 ? flattenedDocuments.slice(0, limit) : flattenedDocuments;
+            documents.push(...limitedDocuments);
+
           } catch (e) {
             reject(e);
           }

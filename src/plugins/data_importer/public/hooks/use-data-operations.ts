@@ -8,7 +8,7 @@ import { extname } from 'path';
 import { i18n } from '@osd/i18n';
 import { CoreStart } from '../../../../core/public';
 import { fileParserService, FileParserConfig } from '../services/file_parser_service';
-import { PreviewResponse, ImportResponse } from '../types';
+import { ImportResponse } from '../types';
 import { PublicConfigSchema } from '../../config';
 import { DataImporterActions, DataImporterState } from './use-data-importer-state';
 
@@ -27,14 +27,12 @@ export const useDataOperations = ({
   notifications,
   config,
 }: UseDataOperationsProps) => {
-
   const previewData = useCallback(async () => {
     if ((!state.inputFile && !state.textInput.trim()) || !state.indexName) return;
 
     actions.setIsLoadingPreview(true);
 
     try {
-      let response: PreviewResponse | undefined;
       let fileToProcess: File;
       let fileExtension: string;
 
@@ -58,18 +56,33 @@ export const useDataOperations = ({
         previewCount: config.filePreviewDocumentsCount,
       };
 
-      response = await fileParserService.parseFile(fileToProcess, parserConfig, http);
+      const response = await fileParserService.parseFile(fileToProcess, parserConfig, http);
 
       if (response) {
         actions.setFilePreviewData(response);
 
-        // Extract available time fields
-        const timeFieldCandidates = Object.keys(response.predictedMapping || {}).filter(
-          (field) => response.predictedMapping?.[field]?.type === 'date'
+        // Extract available time fields - check for various date field types
+        const timeFieldCandidates = Object.keys(response.predictedMapping?.properties || {}).filter(
+          (field) => {
+            const fieldType = response.predictedMapping?.properties?.[field]?.type;
+            // Check for various date/time field types
+            return (
+              fieldType === 'date' ||
+              fieldType === 'date_nanos' ||
+              field.toLowerCase().includes('time') ||
+              field.toLowerCase().includes('date') ||
+              field === 'timestamp' ||
+              field === '@timestamp'
+            );
+          }
         );
         actions.setAvailableTimeFields(timeFieldCandidates);
         if (timeFieldCandidates.length > 0) {
-          actions.setTimeField(timeFieldCandidates[0]);
+          // Prefer @timestamp or timestamp, otherwise use the first one
+          const preferredField =
+            timeFieldCandidates.find((f) => f === '@timestamp' || f === 'timestamp') ||
+            timeFieldCandidates[0];
+          actions.setTimeField(preferredField);
         }
 
         notifications.toasts.addSuccess(
@@ -95,80 +108,83 @@ export const useDataOperations = ({
     }
   }, [state, actions, http, notifications, config]);
 
-  const importData = useCallback(async (fetchIndices: () => Promise<void>) => {
-    if ((!state.inputFile && !state.textInput.trim()) || !state.indexName) return;
+  const importData = useCallback(
+    async (fetchIndices: () => Promise<void>) => {
+      if ((!state.inputFile && !state.textInput.trim()) || !state.indexName) return;
 
-    actions.setIsImporting(true);
-    actions.setImportErrors([]);
+      actions.setIsImporting(true);
+      actions.setImportErrors([]);
 
-    try {
-      let response: ImportResponse | undefined;
-      let fileToProcess: File;
-      let fileExtension: string;
+      try {
+        let response: ImportResponse | undefined;
+        let fileToProcess: File;
+        let fileExtension: string;
 
-      if (state.inputFile) {
-        fileToProcess = state.inputFile;
-        fileExtension = extname(state.inputFile.name);
-      } else if (state.textInput.trim()) {
-        // Create a virtual file from text input using the file parser service
-        fileToProcess = fileParserService.createFileFromText(state.textInput, state.textFileType);
-        fileExtension = extname(fileToProcess.name);
-      } else {
-        return;
-      }
+        if (state.inputFile) {
+          fileToProcess = state.inputFile;
+          fileExtension = extname(state.inputFile.name);
+        } else if (state.textInput.trim()) {
+          // Create a virtual file from text input using the file parser service
+          fileToProcess = fileParserService.createFileFromText(state.textInput, state.textFileType);
+          fileExtension = extname(fileToProcess.name);
+        } else {
+          return;
+        }
 
-      const parserConfig: FileParserConfig = {
-        fileExtension,
-        indexName: state.indexName,
-        createMode: state.createMode,
-        delimiter: state.delimiter,
-        selectedDataSourceId: state.dataSourceId,
-        mapping: state.filePreviewData.predictedMapping,
-      };
+        const parserConfig: FileParserConfig = {
+          fileExtension,
+          indexName: state.indexName,
+          createMode: state.createMode,
+          delimiter: state.delimiter,
+          selectedDataSourceId: state.dataSourceId,
+          mapping: state.filePreviewData.predictedMapping,
+        };
 
-      response = await fileParserService.importFile(fileToProcess, parserConfig, http);
+        response = await fileParserService.importFile(fileToProcess, parserConfig, http);
 
-      if (response && response.success) {
-        actions.setImportStats({
-          totalDocs: response.message.total || state.filePreviewData.documents.length,
-          indexSize: state.inputFile
-            ? `${Math.round(((state.inputFile.size || 0) / 1024 / 1024) * 100) / 100} MB`
-            : `${Math.round((new Blob([state.textInput]).size / 1024 / 1024) * 100) / 100} MB`,
-          timestamp: new Date().toLocaleString(),
-        });
+        if (response && response.success) {
+          actions.setImportStats({
+            totalDocs: response.message.total || state.filePreviewData.documents.length,
+            indexSize: state.inputFile
+              ? `${Math.round(((state.inputFile.size || 0) / 1024 / 1024) * 100) / 100} MB`
+              : `${Math.round((new Blob([state.textInput]).size / 1024 / 1024) * 100) / 100} MB`,
+            timestamp: new Date().toLocaleString(),
+          });
 
-        notifications.toasts.addSuccess(
-          i18n.translate('dataImporter.dataImported', {
-            defaultMessage: '{total} documents successfully imported into {indexName}',
-            values: {
-              total: response.message.total,
-              indexName: state.indexName,
-            },
+          notifications.toasts.addSuccess(
+            i18n.translate('dataImporter.dataImported', {
+              defaultMessage: '{total} documents successfully imported into {indexName}',
+              values: {
+                total: response.message.total,
+                indexName: state.indexName,
+              },
+            })
+          );
+
+          actions.setCurrentStep(3);
+          await fetchIndices();
+        }
+      } catch (error) {
+        const errorMessage = error.body?.message ?? error;
+        actions.setImportErrors([
+          {
+            error: 'Import Error',
+            message: errorMessage,
+          },
+        ]);
+
+        notifications.toasts.addDanger(
+          i18n.translate('dataImporter.dataImportError', {
+            defaultMessage: 'Data import failed: {errorMessage}',
+            values: { errorMessage },
           })
         );
-
-        actions.setCurrentStep(3);
-        await fetchIndices();
+      } finally {
+        actions.setIsImporting(false);
       }
-    } catch (error) {
-      const errorMessage = error.body?.message ?? error;
-      actions.setImportErrors([
-        {
-          error: 'Import Error',
-          message: errorMessage,
-        },
-      ]);
-
-      notifications.toasts.addDanger(
-        i18n.translate('dataImporter.dataImportError', {
-          defaultMessage: 'Data import failed: {errorMessage}',
-          values: { errorMessage },
-        })
-      );
-    } finally {
-      actions.setIsImporting(false);
-    }
-  }, [state, actions, http, notifications]);
+    },
+    [state, actions, http, notifications]
+  );
 
   return {
     previewData,

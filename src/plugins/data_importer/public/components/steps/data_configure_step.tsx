@@ -95,7 +95,7 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
                 </EuiTitle>
                 <EuiSpacer size="m" />
 
-                <EuiFormRow label="Select datasource">
+                <EuiFormRow label="Datasource">
                   <EuiFieldText
                     value={
                       dataSourceName ||
@@ -105,17 +105,21 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
                   />
                 </EuiFormRow>
 
-                <EuiFormRow label="Select/create index">
+                <EuiFormRow label="Index">
                   <EuiFieldText value={indexName} readOnly />
                 </EuiFormRow>
 
-                <EuiFormRow label="Select timefield">
+                <EuiFormRow
+                  label="Time field (optional)"
+                  helpText="Select a time field for time-based filtering in Discover and Visualizations"
+                >
                   <EuiComboBox
-                    placeholder="Select time field..."
+                    placeholder="Select time field (optional)..."
                     singleSelection={{ asPlainText: true }}
                     options={availableTimeFields.map((field) => ({ label: field }))}
                     selectedOptions={timeField ? [{ label: timeField }] : []}
                     onChange={onTimeFieldChange}
+                    isClearable={true}
                   />
                 </EuiFormRow>
 

@@ -1,0 +1,8 @@
+{
+  "timestamp": "2025-10-01T10:15:23Z",
+  "level": "INFO",
+  "service": "user-service", 
+  "message": "User login successful",
+  "user_id": 12345,
+  "ip": "192.168.1.100"
+}

@@ -5,14 +5,16 @@
 
 import { useCallback } from 'react';
 import { extname } from 'path';
-import { CSV_FILE_TYPE } from '../../common/constants';
+import { CSV_FILE_TYPE, TSV_FILE_TYPE } from '../../common/constants';
 import { DataImporterActions, DataImporterState } from './use-data-importer-state';
 
 export const useFileHandling = (state: DataImporterState, actions: DataImporterActions) => {
   const updateDelimiterVisibility = useCallback((file?: File, textType?: string) => {
     const isFileCSV = file && extname(file.name) === `.${CSV_FILE_TYPE}`;
+    const isFileTSV = file && extname(file.name) === `.${TSV_FILE_TYPE}`;
     const isTextCSV = textType === CSV_FILE_TYPE;
-    actions.setShowDelimiterChoice(isFileCSV || isTextCSV);
+    const isTextTSV = textType === TSV_FILE_TYPE;
+    actions.setShowDelimiterChoice(isFileCSV || isFileTSV || isTextCSV || isTextTSV);
   }, [actions]);
 
   const onFileChange = useCallback((files: FileList | null) => {

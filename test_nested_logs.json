@@ -1,0 +1,50 @@
+{
+  "logs": [
+    {
+      "timestamp": "2025-10-01T10:15:23Z",
+      "level": "INFO",
+      "service": "user-service",
+      "message": "User login successful",
+      "user_id": 12345,
+      "ip": "192.168.1.100"
+    },
+    {
+      "timestamp": "2025-10-01T10:16:45Z",
+      "level": "ERROR",
+      "service": "database",
+      "message": "Connection timeout",
+      "host": "db.example.com",
+      "timeout": "30s"
+    }
+  ],
+  "events": [
+    [
+      {
+        "timestamp": "2025-10-01T10:17:12Z",
+        "level": "WARN",
+        "service": "cache-service",
+        "message": "Cache miss for key",
+        "key": "user_profile_12345"
+      }
+    ],
+    [
+      {
+        "timestamp": "2025-10-01T10:18:30Z",
+        "level": "INFO",
+        "service": "auth-service",
+        "message": "Token refresh",
+        "user_id": 12345,
+        "expires_at": "2025-10-01T11:18:30Z"
+      },
+      {
+        "timestamp": "2025-10-01T10:19:05Z",
+        "level": "DEBUG",
+        "service": "api-gateway",
+        "message": "Request processed",
+        "endpoint": "/api/users/12345",
+        "method": "GET",
+        "duration": "150ms"
+      }
+    ]
+  ]
+}

@@ -12,10 +12,22 @@ import { DataImporterPluginSetup, DataImporterPluginStart } from './types';
 import { importFileRoute } from './routes/import_file';
 import { CSVProcessor } from './processors/csv_processor';
 import { importTextRoute } from './routes/import_text';
-import { CSV_FILE_TYPE, JSON_FILE_TYPE, NDJSON_FILE_TYPE, TXT_FILE_TYPE, PLUGIN_NAME } from '../common/constants';
+import {
+  CSV_FILE_TYPE,
+  JSON_FILE_TYPE,
+  NDJSON_FILE_TYPE,
+  TXT_FILE_TYPE,
+  YAML_FILE_TYPE,
+  XML_FILE_TYPE,
+  TSV_FILE_TYPE,
+  PLUGIN_NAME
+} from '../common/constants';
 import { NDJSONProcessor } from './processors/ndjson_processor';
 import { JSONProcessor } from './processors/json_processor';
 import { TXTProcessor } from './processors/txt_processor';
+import { YAMLProcessor } from './processors/yaml_processor';
+import { XMLProcessor } from './processors/xml_processor';
+import { TSVProcessor } from './processors/tsv_processor';
 import { FileProcessorService } from './processors/file_processor_service';
 import { EnhancedFileProcessorService } from './processors/enhanced_file_processor_service';
 import { validateFileTypes } from './utils/util';
@@ -57,12 +69,18 @@ export class DataImporterPlugin
     this.fileProcessors.registerFileProcessor(NDJSON_FILE_TYPE, new NDJSONProcessor());
     this.fileProcessors.registerFileProcessor(JSON_FILE_TYPE, new JSONProcessor());
     this.fileProcessors.registerFileProcessor(TXT_FILE_TYPE, new TXTProcessor());
+    this.fileProcessors.registerFileProcessor(YAML_FILE_TYPE, new YAMLProcessor());
+    this.fileProcessors.registerFileProcessor(XML_FILE_TYPE, new XMLProcessor());
+    this.fileProcessors.registerFileProcessor(TSV_FILE_TYPE, new TSVProcessor());
 
     // Register enhanced file processors
     this.enhancedFileProcessors.registerFileProcessor(CSV_FILE_TYPE, new CSVProcessor());
     this.enhancedFileProcessors.registerFileProcessor(NDJSON_FILE_TYPE, new NDJSONProcessor());
     this.enhancedFileProcessors.registerFileProcessor(JSON_FILE_TYPE, new JSONProcessor());
     this.enhancedFileProcessors.registerFileProcessor(TXT_FILE_TYPE, new TXTProcessor());
+    this.enhancedFileProcessors.registerFileProcessor(YAML_FILE_TYPE, new YAMLProcessor());
+    this.enhancedFileProcessors.registerFileProcessor(XML_FILE_TYPE, new XMLProcessor());
+    this.enhancedFileProcessors.registerFileProcessor(TSV_FILE_TYPE, new TSVProcessor());
 
     // Register server side APIs
     importFileRoute(router, this.config, this.fileProcessors, !!dataSource);

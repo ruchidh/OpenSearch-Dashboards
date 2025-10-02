@@ -36,6 +36,9 @@ interface DataConfigureStepProps {
     message: string;
   }>;
   isImporting: boolean;
+  groqInput?: string;
+  delimiter?: string;
+  showDelimiterChoice?: boolean;
 
   // Callbacks
   onBackToUpload: () => void;
@@ -60,6 +63,9 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
   isLoadingPreview,
   importErrors,
   isImporting,
+  groqInput,
+  delimiter,
+  showDelimiterChoice,
   onBackToUpload,
   onClear,
   onImport,
@@ -67,97 +73,118 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
   canProceedToStep3,
   renderStepProgress,
 }) => {
+  // Check if data formatting section should be shown
+  const hasDataFormatting = (groqInput && groqInput.trim()) || showDelimiterChoice;
   return (
     <EuiPageContent paddingSize="s">
       <div className="wizard-step-container">
         {renderStepProgress()}
 
-        <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
-          <EuiFlexItem grow={false}>
-            <EuiTitle size="xs">
-              <h3>Step 2: Configure & Preview Data</h3>
-            </EuiTitle>
-          </EuiFlexItem>
-          <EuiFlexItem grow={false}>
-            <EuiButton iconType="arrowLeft" size="s" onClick={onBackToUpload}>
-              Back to Upload
-            </EuiButton>
-          </EuiFlexItem>
-        </EuiFlexGroup>
+        <EuiTitle size="xs">
+          <h3>Step 2: Configure & Preview Data</h3>
+        </EuiTitle>
 
         <EuiFlexGroup>
-          {/* Left Panel - Configuration */}
+          {/* Left Panel - Configuration Sections */}
           <EuiFlexItem grow={1} style={{ maxWidth: '400px' }}>
-            <EuiPanel>
-              <EuiTitle size="s">
-                <h3>Data configuration</h3>
-              </EuiTitle>
-              <EuiSpacer size="m" />
+            {/* Combined Data Configuration and Formatting Panel */}
+            <EuiPanel style={{ height: '60vh', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ flex: 1 }}>
+                <EuiTitle size="s">
+                  <h3>Data Configuration</h3>
+                </EuiTitle>
+                <EuiSpacer size="m" />
 
-              <EuiFormRow label="Select datasource">
-                <EuiFieldText
-                  value={
-                    dataSourceName ||
-                    (dataSourceEnabled ? 'No data source selected' : 'Local Cluster')
-                  }
-                  readOnly
-                />
-              </EuiFormRow>
+                <EuiFormRow label="Select datasource">
+                  <EuiFieldText
+                    value={
+                      dataSourceName ||
+                      (dataSourceEnabled ? 'No data source selected' : 'Local Cluster')
+                    }
+                    readOnly
+                  />
+                </EuiFormRow>
 
-              <EuiFormRow label="Select/create index">
-                <EuiFieldText value={indexName} readOnly />
-              </EuiFormRow>
+                <EuiFormRow label="Select/create index">
+                  <EuiFieldText value={indexName} readOnly />
+                </EuiFormRow>
 
-              <EuiFormRow label="Select timefield">
-                <EuiComboBox
-                  placeholder="Select time field..."
-                  singleSelection={{ asPlainText: true }}
-                  options={availableTimeFields.map((field) => ({ label: field }))}
-                  selectedOptions={timeField ? [{ label: timeField }] : []}
-                  onChange={onTimeFieldChange}
-                />
-              </EuiFormRow>
+                <EuiFormRow label="Select timefield">
+                  <EuiComboBox
+                    placeholder="Select time field..."
+                    singleSelection={{ asPlainText: true }}
+                    options={availableTimeFields.map((field) => ({ label: field }))}
+                    selectedOptions={timeField ? [{ label: timeField }] : []}
+                    onChange={onTimeFieldChange}
+                  />
+                </EuiFormRow>
 
-              <EuiSpacer size="m" />
+                {/* Data Formatting Section - Show only if there's applied formatting */}
+                {hasDataFormatting && (
+                  <>
+                    <EuiSpacer size="l" />
+                    <EuiTitle size="s">
+                      <h3>Data Formatting</h3>
+                    </EuiTitle>
+                    <EuiSpacer size="m" />
 
-              <EuiTitle size="xs">
-                <h4>Data formatting</h4>
-              </EuiTitle>
+                    {groqInput && groqInput.trim() && (
+                      <EuiFormRow label="Applied GROQ Command">
+                        <EuiFieldText value={groqInput} readOnly />
+                      </EuiFormRow>
+                    )}
 
-              <EuiSpacer size="l" />
+                    {showDelimiterChoice && (
+                      <EuiFormRow label="Applied Delimiter">
+                        <EuiFieldText
+                          value={delimiter === '\t' ? 'Tab (\\t)' : delimiter === ',' ? 'Comma (,)' : delimiter === ';' ? 'Semicolon (;)' : delimiter === '|' ? 'Pipe (|)' : delimiter}
+                          readOnly
+                        />
+                      </EuiFormRow>
+                    )}
+                  </>
+                )}
+              </div>
 
-              <EuiFlexGroup gutterSize="s">
-                <EuiFlexItem>
-                  <EuiButton
-                    iconType="arrowLeft"
-                    size="s"
-                    onClick={onBackToUpload}
-                  >
-                    Back
-                  </EuiButton>
-                </EuiFlexItem>
-                <EuiFlexItem>
-                  <EuiButton
-                    color="danger"
-                    size="s"
-                    onClick={onClear}
-                  >
-                    Clear
-                  </EuiButton>
-                </EuiFlexItem>
-                <EuiFlexItem>
-                  <EuiButton
-                    fill
-                    color="success"
-                    size="s"
-                    onClick={onImport}
-                    isLoading={isImporting}
-                    isDisabled={!canProceedToStep3}
-                  >
-                    Import
-                  </EuiButton>
-                </EuiFlexItem>
-              </EuiFlexGroup>
+              {/* Action Buttons - Pinned to bottom */}
+              <div style={{ paddingTop: '16px' }}>
+                {/* Back and Clear buttons row */}
+                <EuiFlexGroup justifyContent="spaceBetween" gutterSize="s">
+                  <EuiFlexItem grow={false}>
+                    <EuiButton
+                      iconType="arrowLeft"
+                      size="s"
+                      onClick={onBackToUpload}
+                    >
+                      Back
+                    </EuiButton>
+                  </EuiFlexItem>
+                  <EuiFlexItem grow={false}>
+                    <EuiButton
+                      color="danger"
+                      size="s"
+                      onClick={onClear}
+                    >
+                      Clear
+                    </EuiButton>
+                  </EuiFlexItem>
+                </EuiFlexGroup>
+
+                <EuiSpacer size="m" />
+
+                {/* Full width Import button */}
+                <EuiButton
+                  fill
+                  color="success"
+                  size="m"
+                  fullWidth={true}
+                  onClick={onImport}
+                  isLoading={isImporting}
+                  isDisabled={!canProceedToStep3}
+                >
+                  Import
+                </EuiButton>
+              </div>
             </EuiPanel>
           </EuiFlexItem>
 

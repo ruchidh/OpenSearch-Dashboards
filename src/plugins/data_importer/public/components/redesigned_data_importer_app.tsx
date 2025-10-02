@@ -159,6 +159,9 @@ export const RedesignedDataImporterPluginApp = ({
                   isLoadingPreview={state.isLoadingPreview}
                   importErrors={state.importErrors}
                   isImporting={state.isImporting}
+                  groqInput={state.groqInput}
+                  delimiter={state.delimiter}
+                  showDelimiterChoice={state.showDelimiterChoice}
                   onBackToUpload={() => actions.setCurrentStep(1)}
                   onClear={handleClear}
                   onImport={handleImport}

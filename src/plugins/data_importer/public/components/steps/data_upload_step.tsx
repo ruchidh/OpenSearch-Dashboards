@@ -18,6 +18,8 @@ import {
   EuiButton,
   EuiFilePicker,
   EuiHorizontalRule,
+  EuiButtonIcon,
+  EuiPopover,
 } from '@elastic/eui';
 import { DelimiterSelect } from '../delimiter_select';
 import { ImportTextContentBody } from '../import_text_content';
@@ -78,6 +80,7 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
   renderStepProgress,
 }) => {
   const [isTextEditorInfoOpen, setIsTextEditorInfoOpen] = useState<boolean>(false);
+  const [isGroqInfoOpen, setIsGroqInfoOpen] = useState<boolean>(false);
 
   return (
     <EuiPageContent paddingSize="s">
@@ -98,59 +101,150 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
         <EuiFlexGroup>
           {/* Left Panel - Configuration */}
           <EuiFlexItem grow={1} style={{ maxWidth: '400px' }}>
-            <EuiPanel className={canProceedToStep2 ? 'config-panel active' : 'config-panel'}>
-              <EuiTitle size="s">
-                <h3>Data Configuration</h3>
-              </EuiTitle>
-              <EuiSpacer size="m" />
+            <EuiPanel
+              className={canProceedToStep2 ? 'config-panel active' : 'config-panel'}
+              style={{
+                height: '60vh',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <div>
+                <EuiTitle size="s">
+                  <h3>Data Configuration</h3>
+                </EuiTitle>
+                <EuiSpacer size="s" />
 
-              {/* Data Source Selection - Always show current data source */}
-              <EuiFormRow label="Data source">
-                <div>{renderDataSourceComponent}</div>
-              </EuiFormRow>
+                {/* Data Source Selection - Always show current data source */}
+                <EuiFormRow label="Data source">
+                  <div>{renderDataSourceComponent}</div>
+                </EuiFormRow>
 
-              {/* Index Selection */}
-              <EuiFormRow label="Select/create index">
-                <EuiComboBox
-                  placeholder="Enter index name..."
-                  singleSelection={{ asPlainText: true }}
-                  options={indexOptions}
-                  selectedOptions={indexName ? [{ label: indexName }] : []}
-                  onChange={onIndexNameChange}
-                  onCreateOption={onCreateIndexName}
-                />
-              </EuiFormRow>
+                {/* Index Selection */}
+                <EuiFormRow label="Select/create index">
+                  <EuiComboBox
+                    placeholder="Enter index name..."
+                    singleSelection={{ asPlainText: true }}
+                    options={indexOptions}
+                    selectedOptions={indexName ? [{ label: indexName }] : []}
+                    onChange={onIndexNameChange}
+                    onCreateOption={onCreateIndexName}
+                  />
+                </EuiFormRow>
+              </div>
 
-              {/* GROQ Input */}
-              <EuiFormRow label="Groq command">
-                <EuiTextArea
-                  value={groqInput}
-                  onChange={(e) => onGroqInputChange(e.target.value)}
-                  placeholder="Optional: Enter GROQ queries"
-                  rows={4}
-                  resize="vertical"
-                />
-              </EuiFormRow>
+              {/* GROQ Input - Takes remaining height */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                <EuiFormRow
+                  label={
+                    <EuiFlexGroup alignItems="center" gutterSize="xs" responsive={false}>
+                      <EuiFlexItem grow={false}>Groq command (optional)</EuiFlexItem>
+                      <EuiFlexItem grow={false}>
+                        <EuiPopover
+                          button={
+                            <EuiButtonIcon
+                              iconType="questionInCircle"
+                              aria-label="GROQ command information"
+                              size="s"
+                              onClick={() => setIsGroqInfoOpen(!isGroqInfoOpen)}
+                            />
+                          }
+                          isOpen={isGroqInfoOpen}
+                          closePopover={() => setIsGroqInfoOpen(false)}
+                          panelPaddingSize="m"
+                          anchorPosition="downLeft"
+                        >
+                          <div style={{ maxWidth: '350px' }}>
+                            <EuiTitle size="xs">
+                              <h4>GROQ Command Help</h4>
+                            </EuiTitle>
+                            <EuiSpacer size="s" />
+                            <EuiText size="s">
+                              <p>
+                                <strong>GROQ</strong> is a query language for filtering and
+                                transforming your data.
+                              </p>
+
+                              <p>
+                                <strong>Supported File Types:</strong>
+                              </p>
+                              <ul>
+                                <li>✅ JSON/NDJSON - Full support</li>
+                                <li>✅ CSV/TSV - After conversion to JSON</li>
+                                <li>✅ YAML - After conversion to JSON</li>
+                                <li>✅ XML - After conversion to JSON</li>
+                                <li>⚠️ TXT - Only if contains structured data</li>
+                              </ul>
+
+                              <p>
+                                <strong>Common Examples:</strong>
+                              </p>
+                              <ul>
+                                <li>
+                                  <code>*[level == "ERROR"]</code> - Filter errors
+                                </li>
+                                <li>
+                                  <code>*[user_id == 12345]</code> - Filter by user
+                                </li>
+                                <li>
+                                  <code>*[service match "*auth*"]</code> - Service contains "auth"
+                                </li>
+                                <li>
+                                  <code>*[level == "ERROR"]&#123;timestamp, message&#125;</code> -
+                                  Select specific fields
+                                </li>
+                              </ul>
+
+                              <p>
+                                <em>
+                                  GROQ works on the parsed JSON structure of your data, not the raw
+                                  file content.
+                                </em>
+                              </p>
+                            </EuiText>
+                          </div>
+                        </EuiPopover>
+                      </EuiFlexItem>
+                    </EuiFlexGroup>
+                  }
+                  style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+                >
+                  <EuiTextArea
+                    value={groqInput}
+                    onChange={(e) => onGroqInputChange(e.target.value)}
+                    placeholder="Optional: Enter GROQ queries to filter or transform your data"
+                    resize="vertical"
+                    style={{
+                      height: showDelimiterChoice ? 'calc(100% - 80px)' : '100%',
+                      minHeight: '120px',
+                    }}
+                  />
+                </EuiFormRow>
+              </div>
 
               {/* Delimiter Selection - Show only for CSV files */}
               {showDelimiterChoice && (
-                <DelimiterSelect
-                  onDelimiterChange={onDelimiterChange}
-                  initialDelimiter={delimiter}
-                />
+                <div>
+                  <DelimiterSelect
+                    onDelimiterChange={onDelimiterChange}
+                    initialDelimiter={delimiter}
+                  />
+                </div>
               )}
 
-              <EuiSpacer size="m" />
-
-              <EuiButton
-                fill
-                size="s"
-                color="success"
-                isDisabled={!canProceedToStep2}
-                onClick={onPreviewClick}
-              >
-                Preview
-              </EuiButton>
+              {/* Preview Button - Always at bottom */}
+              <div style={{ paddingTop: '16px' }}>
+                <EuiButton
+                  fill
+                  size="m"
+                  color="success"
+                  fullWidth={true}
+                  isDisabled={!canProceedToStep2}
+                  onClick={onPreviewClick}
+                >
+                  Preview
+                </EuiButton>
+              </div>
             </EuiPanel>
           </EuiFlexItem>
 

@@ -118,8 +118,8 @@ export const ImportTextContentBody = ({
                       </ul>
                       <p>
                         <em>
-                          The editor will show a character counter and highlight when
-                          approaching the limit.
+                          The editor will show a character counter and highlight when approaching
+                          the limit.
                         </em>
                       </p>
                     </EuiText>
@@ -129,14 +129,22 @@ export const ImportTextContentBody = ({
             )}
           </EuiFlexGroup>
         </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiCodeEditor
-            id={uuid.v4()}
-            onChange={onTextUpdate}
-            width={'full'}
-            value={codeEditorText}
-            mode={fileType}
-          />
+        <EuiFlexItem grow={1}>
+          <div
+            style={{
+              height: 'calc(60vh - 100px)',
+              border: '1px solid #D3DAE6',
+              borderRadius: '6px',
+            }}
+          >
+            <EuiCodeEditor
+              id={uuid.v4()}
+              onChange={onTextUpdate}
+              width={'100%'}
+              value={codeEditorText}
+              mode={fileType}
+            />
+          </div>
         </EuiFlexItem>
         <EuiFlexItem>
           <EuiText color={numCharacters > characterLimit ? 'danger' : 'default'}>

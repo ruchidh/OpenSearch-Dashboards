@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { PreviewResponse } from '../types';
-import { CSV_SUPPORTED_DELIMITERS } from '../../common/constants';
+import { CSV_SUPPORTED_DELIMITERS, JSON_FILE_TYPE } from '../../common/constants';
 import { PublicConfigSchema } from '../../config';
 
 interface ImportStats {
@@ -90,7 +90,8 @@ export const useDataImporterState = (config: PublicConfigSchema) => {
   const [inputFile, setInputFile] = useState<File | undefined>();
   const [textInput, setTextInput] = useState<string>('');
   const [textFileType, setTextFileType] = useState<string>(
-    config.enabledFileTypes.length > 0 ? config.enabledFileTypes[0] : 'json'
+    config.enabledFileTypes.includes(JSON_FILE_TYPE) ? JSON_FILE_TYPE :
+    (config.enabledFileTypes.length > 0 ? config.enabledFileTypes[0] : JSON_FILE_TYPE)
   );
   const [dataSourceId, setDataSourceId] = useState<string | undefined>();
   const [dataSourceName, setDataSourceName] = useState<string>('');
@@ -118,7 +119,10 @@ export const useDataImporterState = (config: PublicConfigSchema) => {
     setCurrentStep(1);
     setInputFile(undefined);
     setTextInput('');
-    setTextFileType(config.enabledFileTypes.length > 0 ? config.enabledFileTypes[0] : 'json');
+    setTextFileType(
+      config.enabledFileTypes.includes(JSON_FILE_TYPE) ? JSON_FILE_TYPE :
+      (config.enabledFileTypes.length > 0 ? config.enabledFileTypes[0] : JSON_FILE_TYPE)
+    );
     setGroqInput('');
     setIndexName('');
     setDataSourceName('');

@@ -4,10 +4,34 @@
  */
 
 .redesigned-data-importer {
+  height: calc(100vh - 100px); // Account for navigation and page header
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  .euiPage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0; // Remove default padding
+  }
+
+  .euiPageBody {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0; // Remove default padding
+  }
+
   // Wizard Step Container
   .wizard-step-container {
     max-width: 1200px;
     margin: 0 auto;
+    flex: 1;
+    overflow: hidden;
+    padding: 16px; // Add padding here instead
   }
 
   // Step progress indicator
@@ -174,7 +198,6 @@
       .euiFormLabel {
         font-weight: 500;
         color: #343741;
-        margin-bottom: 8px;
       }
 
       // GROQ text area styling
@@ -262,7 +285,8 @@
   }
 
   // Preview and errors panels
-  .preview-panel, .errors-panel {
+  .preview-panel,
+  .errors-panel {
     background: white;
     border: 2px solid #D3DAE6;
     border-radius: 8px;
@@ -460,8 +484,15 @@
       }
 
       @keyframes importPulse {
-        0%, 100% { opacity: 0.8; }
-        50% { opacity: 1; }
+
+        0%,
+        100% {
+          opacity: 0.8;
+        }
+
+        50% {
+          opacity: 1;
+        }
       }
     }
   }
@@ -652,6 +683,7 @@
       }
     }
   }
+
 
   // Mapping Errors Section
   .mapping-errors-section {
@@ -915,6 +947,7 @@
     }
 
     .action-buttons {
+
       .primary-button,
       .secondary-button {
         height: 44px;
@@ -935,6 +968,7 @@
 // Dark Theme Support
 .theme-dark {
   .redesigned-data-importer {
+
     .index-stats-panel,
     .config-panel {
       background: #25262e;

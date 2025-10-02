@@ -102,8 +102,13 @@ export const RedesignedDataImporterPluginApp = ({
 
   // Create import handler with fetch indices callback
   const handleImport = useCallback(() => {
-    dataOperations.importData(dataSourceManagement_.fetchIndices);
-  }, [dataOperations, dataSourceManagement_.fetchIndices]);
+    // Create a simple fetchIndices function for the import operation
+    const fetchIndices = async () => {
+      // This is handled automatically by the useEffect in useDataSourceManagement
+      // No need to do anything here as indices are already being fetched
+    };
+    dataOperations.importData(fetchIndices);
+  }, [dataOperations]);
 
   // Render step progress indicator
   const renderStepProgress = useCallback(
@@ -122,7 +127,6 @@ export const RedesignedDataImporterPluginApp = ({
               {state.currentStep === 1 && (
                 <DataUploadStep
                   config={config}
-                  dataSourceEnabled={dataSourceEnabled}
                   indexName={state.indexName}
                   inputFile={state.inputFile}
                   textInput={state.textInput}

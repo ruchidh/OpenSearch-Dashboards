@@ -28,7 +28,6 @@ import { PublicConfigSchema } from '../../../config';
 interface DataUploadStepProps {
   // Configuration
   config: PublicConfigSchema;
-  dataSourceEnabled: boolean;
 
   // State
   indexName: string;
@@ -60,7 +59,6 @@ interface DataUploadStepProps {
 
 export const DataUploadStep: React.FC<DataUploadStepProps> = ({
   config,
-  dataSourceEnabled,
   indexName,
   inputFile,
   textInput,
@@ -108,18 +106,10 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
               </EuiTitle>
               <EuiSpacer size="m" />
 
-              {/* Data Source Selection - Required */}
-              {dataSourceEnabled && renderDataSourceComponent && (
-                <>
-                  <EuiFormRow
-                    label="Select datasource"
-                    isInvalid={!renderDataSourceComponent}
-                    error={!renderDataSourceComponent ? ['Data source is required'] : []}
-                  >
-                    <div>{renderDataSourceComponent}</div>
-                  </EuiFormRow>
-                </>
-              )}
+              {/* Data Source Selection - Always show current data source */}
+              <EuiFormRow label="Data source">
+                <div>{renderDataSourceComponent}</div>
+              </EuiFormRow>
 
               {/* Index Selection */}
               <EuiFormRow label="Select/create index">

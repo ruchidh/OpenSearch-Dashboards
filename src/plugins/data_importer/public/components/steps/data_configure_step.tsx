@@ -88,8 +88,8 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
           {/* Left Panel - Configuration Sections */}
           <EuiFlexItem grow={1} style={{ maxWidth: '400px' }}>
             {/* Combined Data Configuration and Formatting Panel */}
-            <EuiPanel style={{ height: '60vh', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ flex: 1 }}>
+            <EuiPanel style={{ height: '70vh', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ flex: '1 1 auto', overflow: 'auto', paddingRight: '8px', minHeight: 0 }}>
                 <EuiTitle size="s">
                   <h3>Data Configuration</h3>
                 </EuiTitle>
@@ -123,35 +123,11 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
                   />
                 </EuiFormRow>
 
-                {/* Data Formatting Section - Show only if there's applied formatting */}
-                {hasDataFormatting && (
-                  <>
-                    <EuiSpacer size="l" />
-                    <EuiTitle size="s">
-                      <h3>Data Formatting</h3>
-                    </EuiTitle>
-                    <EuiSpacer size="m" />
-
-                    {groqInput && groqInput.trim() && (
-                      <EuiFormRow label="Applied GROQ Command">
-                        <EuiFieldText value={groqInput} readOnly />
-                      </EuiFormRow>
-                    )}
-
-                    {showDelimiterChoice && (
-                      <EuiFormRow label="Applied Delimiter">
-                        <EuiFieldText
-                          value={delimiter === '\t' ? 'Tab (\\t)' : delimiter === ',' ? 'Comma (,)' : delimiter === ';' ? 'Semicolon (;)' : delimiter === '|' ? 'Pipe (|)' : delimiter}
-                          readOnly
-                        />
-                      </EuiFormRow>
-                    )}
-                  </>
-                )}
+                {/* Simplified - removed data formatting section to save space */}
               </div>
 
               {/* Action Buttons - Pinned to bottom */}
-              <div style={{ paddingTop: '16px' }}>
+              <div style={{ flex: '0 0 auto', borderTop: '1px solid #D3DAE6', padding: '16px 0' }}>
                 {/* Back and Clear buttons row */}
                 <EuiFlexGroup justifyContent="spaceBetween" gutterSize="s">
                   <EuiFlexItem grow={false}>
@@ -184,9 +160,9 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
                   fullWidth={true}
                   onClick={onImport}
                   isLoading={isImporting}
-                  isDisabled={!canProceedToStep3}
+                  isDisabled={true}
                 >
-                  Import
+                  Import (Resolve conflicts first)
                 </EuiButton>
               </div>
             </EuiPanel>
@@ -216,20 +192,58 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
               </div>
             </EuiPanel>
 
-            {/* Errors Panel - Only show when there are errors */}
-            {importErrors.length > 0 && (
-              <EuiPanel>
+            {/* Errors Panel - Show dummy errors for demo */}
+            {(importErrors.length > 0 || true) && (
+              <EuiPanel style={{ maxHeight: '40vh', overflow: 'auto' }}>
                 <EuiTitle size="s">
-                  <h3>Errors</h3>
+                  <h3>Mapping Conflicts & Errors</h3>
                 </EuiTitle>
                 <EuiSpacer size="m" />
 
                 <div>
+                  {/* Real errors if they exist */}
                   {importErrors.map((error, index) => (
                     <EuiCallOut key={index} title={error.error} color="danger" iconType="alert">
                       <p>{error.message}</p>
                     </EuiCallOut>
                   ))}
+
+                  {/* DEMO: Dummy mapping conflict errors */}
+                  <EuiCallOut
+                    title="Field Type Conflict: amount"
+                    color="danger"
+                    iconType="alert"
+                    style={{ marginBottom: '8px' }}
+                  >
+                    <p>
+                      <strong>Conflict:</strong> Mixed types - number, string, boolean<br/>
+                      <strong>Affected:</strong> 3 of 4 documents<br/>
+                      <strong>Fix:</strong> Standardize to numeric format
+                    </p>
+                  </EuiCallOut>
+
+                  <EuiCallOut
+                    title="Field Type Conflict: user_id"
+                    color="danger"
+                    iconType="alert"
+                    style={{ marginBottom: '8px' }}
+                  >
+                    <p>
+                      <strong>Conflict:</strong> Expected integer, found string/float/object<br/>
+                      <strong>Fix:</strong> Use consistent ID format
+                    </p>
+                  </EuiCallOut>
+
+                  <EuiCallOut
+                    title="Invalid Date: timestamp"
+                    color="warning"
+                    iconType="alert"
+                  >
+                    <p>
+                      <strong>Issue:</strong> Some values not valid dates<br/>
+                      <strong>Fix:</strong> Use ISO format (2024-01-15T10:30:00Z)
+                    </p>
+                  </EuiCallOut>
                 </div>
               </EuiPanel>
             )}

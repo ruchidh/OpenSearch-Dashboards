@@ -24,7 +24,7 @@ export const DEFAULT_SUPPORTED_FILE_TYPES_LIST = [
   TXT_FILE_TYPE,
   YAML_FILE_TYPE,
   XML_FILE_TYPE,
-  TSV_FILE_TYPE
+  TSV_FILE_TYPE,
 ];
 
 export const CSV_SUPPORTED_DELIMITERS = [',', ';', '\t', '|'];

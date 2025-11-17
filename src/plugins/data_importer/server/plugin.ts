@@ -20,7 +20,7 @@ import {
   YAML_FILE_TYPE,
   XML_FILE_TYPE,
   TSV_FILE_TYPE,
-  PLUGIN_NAME
+  PLUGIN_NAME,
 } from '../common/constants';
 import { NDJSONProcessor } from './processors/ndjson_processor';
 import { JSONProcessor } from './processors/json_processor';
@@ -50,7 +50,9 @@ export class DataImporterPlugin
   private config: TypeOf<typeof configSchema> | undefined;
 
   constructor(private readonly initializerContext: PluginInitializerContext) {
-    this.enhancedFileProcessors = new EnhancedFileProcessorService(this.initializerContext.logger.get());
+    this.enhancedFileProcessors = new EnhancedFileProcessorService(
+      this.initializerContext.logger.get()
+    );
   }
 
   public async setup(

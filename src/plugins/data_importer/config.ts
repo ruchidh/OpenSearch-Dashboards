@@ -11,7 +11,7 @@ import {
   TXT_FILE_TYPE,
   YAML_FILE_TYPE,
   XML_FILE_TYPE,
-  TSV_FILE_TYPE
+  TSV_FILE_TYPE,
 } from './common/constants';
 
 export const configSchema = schema.object({
@@ -24,7 +24,7 @@ export const configSchema = schema.object({
       TXT_FILE_TYPE,
       YAML_FILE_TYPE,
       XML_FILE_TYPE,
-      TSV_FILE_TYPE
+      TSV_FILE_TYPE,
     ],
   }),
   maxFileSizeBytes: schema.number({

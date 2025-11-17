@@ -13,7 +13,7 @@ import { PublicConfigSchema } from '../config';
 import { DataImporterPluginSetupDeps } from './types';
 
 export const renderApp = (
-  { notifications, http, savedObjects }: CoreStart,
+  { notifications, http, savedObjects, application }: CoreStart,
   { navigation }: DataImporterPluginStartDependencies,
   { appBasePath, element }: AppMountParameters,
   { dataSource, dataSourceManagement }: DataImporterPluginSetupDeps,
@@ -28,6 +28,7 @@ export const renderApp = (
         basename={appBasePath}
         notifications={notifications}
         http={http}
+        application={application}
         navigation={navigation}
         config={config}
         savedObjects={savedObjects}

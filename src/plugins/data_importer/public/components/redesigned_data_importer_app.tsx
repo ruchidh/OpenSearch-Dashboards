@@ -29,6 +29,7 @@ interface RedesignedDataImporterPluginAppProps {
   notifications: CoreStart['notifications'];
   http: CoreStart['http'];
   savedObjects: CoreStart['savedObjects'];
+  application: CoreStart['application'];
   navigation: NavigationPublicPluginStart;
   config: PublicConfigSchema;
   hideLocalCluster: boolean;
@@ -40,6 +41,7 @@ export const RedesignedDataImporterPluginApp = ({
   basename,
   notifications,
   http,
+  application,
   navigation,
   config,
   savedObjects,
@@ -177,6 +179,8 @@ export const RedesignedDataImporterPluginApp = ({
                   filePreviewData={state.filePreviewData}
                   importErrors={state.importErrors}
                   onRestart={actions.resetWorkflow}
+                  application={application}
+                  http={http}
                   renderStepProgress={renderStepProgress}
                 />
               )}

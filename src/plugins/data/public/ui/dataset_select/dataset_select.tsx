@@ -410,7 +410,7 @@ const DatasetSelect: React.FC<DatasetSelectProps> = ({ onSelect, supportedTypes,
           justifyContent="spaceBetween"
           alignItems="center"
           responsive={false}
-          gutterSize="none"
+          gutterSize="s"
           className="datasetSelect__footer"
         >
           <EuiFlexItem grow={false} className="datasetSelect__footerItem">
@@ -489,6 +489,19 @@ const DatasetSelect: React.FC<DatasetSelectProps> = ({ onSelect, supportedTypes,
                 id="data.datasetSelect.advancedButton"
                 defaultMessage="View all available data"
               />
+            </EuiButton>
+          </EuiFlexItem>
+          <EuiFlexItem grow={false} className="datasetSelect__footerItem">
+            <EuiButton
+              className="datasetSelect__importButton"
+              data-test-subj="datasetSelectImportButton"
+              iconType="importAction"
+              iconSide="right"
+              size="s"
+              color="primary"
+              onClick={handleImportData}
+            >
+              <FormattedMessage id="data.datasetSelect.importButton" defaultMessage="Import Data" />
             </EuiButton>
           </EuiFlexItem>
         </EuiFlexGroup>

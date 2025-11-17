@@ -15,6 +15,8 @@ import {
   EuiButton,
   EuiCallOut,
 } from '@elastic/eui';
+import { ApplicationStart, CoreStart } from 'opensearch-dashboards/public';
+import { getWorkspaceIdFromUrl, formatUrlWithWorkspaceId } from '../../../../../core/public/utils';
 import { EnhancedPreviewComponent } from '../enhanced_preview_table';
 import { PreviewResponse } from '../../types';
 
@@ -36,6 +38,10 @@ interface DataImportCompleteStepProps {
   // Callbacks
   onRestart: () => void;
 
+  // Services
+  application: ApplicationStart;
+  http: CoreStart['http'];
+
   // UI Components
   renderStepProgress: () => React.ReactNode;
 }
@@ -46,8 +52,24 @@ export const DataImportCompleteStep: React.FC<DataImportCompleteStepProps> = ({
   filePreviewData,
   importErrors,
   onRestart,
+  application,
+  http,
   renderStepProgress,
 }) => {
+  const redirectToExplore = () => {
+    // Get current workspace ID from URL
+    const currentWorkspaceId = getWorkspaceIdFromUrl(window.location.href, http.basePath.get());
+
+    if (currentWorkspaceId) {
+      // If in workspace, navigate to explore/logs within that workspace
+      const targetUrl = `${window.location.origin}${http.basePath.get()}/w/${currentWorkspaceId}/app/explore/logs#/`;
+      window.location.href = targetUrl;
+    } else {
+      // If outside workspace (like from Data Administration), navigate to standard Discover
+      const targetUrl = `${window.location.origin}${http.basePath.get()}/app/discover`;
+      window.location.href = targetUrl;
+    }
+  };
   return (
     <EuiPageContent paddingSize="s">
       <div className="wizard-step-container">
@@ -104,7 +126,7 @@ export const DataImportCompleteStep: React.FC<DataImportCompleteStepProps> = ({
                   <EuiButton
                     fill
                     size="s"
-                    href={`#/discover?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-15m,to:now))&_a=(columns:!(_source),filters:!(),index:'${indexName}',interval:auto,query:(language:kuery,query:''),sort:!(!('@timestamp',desc)))`}
+                    onClick={redirectToExplore}
                   >
                     Explore in Discover
                   </EuiButton>

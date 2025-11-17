@@ -5,6 +5,8 @@
 
 import {
   EuiButton,
+  EuiFlexGroup,
+  EuiFlexItem,
   EuiIcon,
   EuiPopover,
   EuiPopoverFooter,
@@ -79,7 +81,7 @@ export const DatasetSelector = ({
   const isMounted = useRef(false);
   const [isOpen, setIsOpen] = useState(false);
   const [indexPatterns, setIndexPatterns] = useState<Dataset[]>([]);
-  const { overlays } = services;
+  const { overlays, application } = services;
   const datasetService = getQueryService().queryString.getDatasetService();
   const datasetIcon =
     datasetService.getType(selectedDataset?.sourceDatasetRef?.type || selectedDataset?.type || '')
@@ -127,6 +129,13 @@ export const DatasetSelector = ({
   }, [isOpen]);
 
   const closePopover = useCallback(() => setIsOpen(false), []);
+
+  const handleImportData = useCallback(() => {
+    closePopover();
+    if (application) {
+      application.navigateToApp('dataImporter');
+    }
+  }, [closePopover, application]);
 
   const options = useMemo(() => {
     const buildDatasetOptions = (
@@ -262,41 +271,62 @@ export const DatasetSelector = ({
         className="datasetSelector__footer"
         data-test-subj="datasetSelectorFooter"
       >
-        <EuiButton
-          className="datasetSelector__advancedButton"
-          data-test-subj="datasetSelectorAdvancedButton"
-          iconType="gear"
-          iconSide="right"
-          iconSize="s"
-          size="s"
-          isSelected={false}
-          onClick={() => {
-            closePopover();
-            const overlay = overlays?.openModal(
-              toMountPoint(
-                <AdvancedSelector
-                  services={services}
-                  onSelect={(query: Partial<Query>) => {
-                    overlay?.close();
-                    if (query) {
-                      onSelect(query);
-                    }
-                  }}
-                  onCancel={() => overlay?.close()}
-                />
-              ),
-              {
-                maxWidth: false,
-                className: 'datasetSelector__advancedModal',
-              }
-            );
-          }}
-        >
-          <FormattedMessage
-            id="data.datasetSelector.advancedButton"
-            defaultMessage="View all available data"
-          />
-        </EuiButton>
+        <EuiFlexGroup gutterSize="s" responsive={false}>
+          <EuiFlexItem>
+            <EuiButton
+              className="datasetSelector__advancedButton"
+              data-test-subj="datasetSelectorAdvancedButton"
+              iconType="gear"
+              iconSide="right"
+              iconSize="s"
+              size="s"
+              isSelected={false}
+              onClick={() => {
+                closePopover();
+                const overlay = overlays?.openModal(
+                  toMountPoint(
+                    <AdvancedSelector
+                      services={services}
+                      onSelect={(query: Partial<Query>) => {
+                        overlay?.close();
+                        if (query) {
+                          onSelect(query);
+                        }
+                      }}
+                      onCancel={() => overlay?.close()}
+                    />
+                  ),
+                  {
+                    maxWidth: false,
+                    className: 'datasetSelector__advancedModal',
+                  }
+                );
+              }}
+            >
+              <FormattedMessage
+                id="data.datasetSelector.advancedButton"
+                defaultMessage="View all available data"
+              />
+            </EuiButton>
+          </EuiFlexItem>
+          <EuiFlexItem>
+            <EuiButton
+              className="datasetSelector__importButton"
+              data-test-subj="datasetSelectorImportButton"
+              iconType="importAction"
+              iconSide="right"
+              iconSize="s"
+              size="s"
+              color="primary"
+              onClick={handleImportData}
+            >
+              <FormattedMessage
+                id="data.datasetSelector.importButton"
+                defaultMessage="Import Data"
+              />
+            </EuiButton>
+          </EuiFlexItem>
+        </EuiFlexGroup>
       </EuiPopoverFooter>
     </EuiPopover>
   );

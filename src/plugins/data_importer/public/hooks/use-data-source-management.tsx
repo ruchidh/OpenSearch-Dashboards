@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { EuiSpacer } from '@elastic/eui';
 import { CoreStart } from '../../../../core/public';
 import {
@@ -46,8 +46,41 @@ export const useDataSourceManagement = ({
     DataSourceSelectableConfig
   >();
 
+  // Track the last fetched data source to prevent duplicate calls
+  const lastFetchedDataSource = useRef<string | undefined>(undefined);
+  const isFetching = useRef<boolean>(false);
+
+  // Helper function to validate if we have a proper data source selection
+  const hasValidDataSourceSelection = useCallback(() => {
+    // Must have a data source name (indicates user made a selection or auto-selected)
+    if (!state.dataSourceName) {
+      return false;
+    }
+
+    // For enabled data sources, we need either:
+    // 1. A remote data source (has dataSourceId)
+    // 2. Local cluster selection (dataSourceName but no dataSourceId)
+    if (dataSourceEnabled) {
+      // Remote data source selected
+      if (state.dataSourceId) {
+        return true;
+      }
+      // Local cluster selected (name contains 'local' and no dataSourceId)
+      if (!state.dataSourceId && state.dataSourceName.toLowerCase().includes('local')) {
+        return true;
+      }
+      return false;
+    } else {
+      // Data sources disabled, should be using local cluster
+      return state.dataSourceName.toLowerCase().includes('local');
+    }
+  }, [state.dataSourceId, state.dataSourceName, dataSourceEnabled]);
+
   const onDataSourceSelect = useCallback(
     (newDataSource: DataSourceOption[]) => {
+      // Reset the fetch cache when data source changes
+      lastFetchedDataSource.current = undefined;
+
       if (newDataSource.length > 0) {
         actions.setDataSourceId(newDataSource[0].id);
         actions.setDataSourceName(
@@ -132,35 +165,56 @@ export const useDataSourceManagement = ({
     state.dataSourceName,
   ]);
 
-  // Auto-select local cluster if no data sources are configured
+  // Only auto-select local cluster when data sources are completely disabled
+  // Otherwise, let the user make an explicit choice
   useEffect(() => {
-    if (dataSourceEnabled && !state.dataSourceId && !state.dataSourceName) {
-      // If local cluster is available (not hidden), set it up properly
-      if (!hideLocalCluster) {
-        // For local cluster, we don't need a dataSourceId - just set the name
-        // This indicates local cluster is selected without requiring a saved object
-        actions.setDataSourceName('Local Cluster');
-      }
-    } else if (!dataSourceEnabled && !state.dataSourceName) {
-      // If data sources are disabled, we're always using local cluster
+    if (!dataSourceEnabled && !state.dataSourceName) {
+      // If data sources are disabled, we must use local cluster
       actions.setDataSourceName('Local Cluster');
     }
-  }, [dataSourceEnabled, state.dataSourceId, state.dataSourceName, hideLocalCluster, actions]);
+    // Remove auto-selection for enabled data sources - let user choose explicitly
+  }, [dataSourceEnabled]);
+
 
   useEffect(() => {
-    // Only fetch indices if we have basic requirements and avoid infinite loops
+    // Only fetch indices when we have a valid data source selection
+    if (!hasValidDataSourceSelection()) {
+      return; // No proper data source selected, don't fetch
+    }
+
     if (!http) return;
 
-    const doFetchIndices = async () => {
+    const currentDataSourceId = state.dataSourceId || 'local';
+
+    // Skip if already fetching or already fetched this data source
+    if (
+      isFetching.current ||
+      lastFetchedDataSource.current === currentDataSourceId
+    ) {
+      return;
+    }
+
+    // Debounce rapid changes to prevent excessive API calls
+    const timeoutId = setTimeout(async () => {
+      // Double-check conditions after timeout in case they changed
+      if (
+        isFetching.current ||
+        lastFetchedDataSource.current === currentDataSourceId ||
+        !hasValidDataSourceSelection() // Re-validate data source selection
+      ) {
+        return;
+      }
+
+      isFetching.current = true;
+
       try {
-        console.log('Fetching indices with dataSourceId:', state.dataSourceId);
         // For local cluster, pass undefined as dataSourceId
         const response = await catIndices({
           http,
           dataSourceId: state.dataSourceId, // This will be undefined for local cluster
         });
-        console.log('Successfully fetched indices:', response);
         actions.setIndexOptions(response.indices.map((index: string) => ({ label: index })));
+        lastFetchedDataSource.current = currentDataSourceId;
       } catch (error) {
         // Log error details for debugging
         console.warn('Could not fetch indices:', {
@@ -186,11 +240,14 @@ export const useDataSourceManagement = ({
         }
 
         actions.setIndexOptions([]);
+      } finally {
+        isFetching.current = false;
       }
-    };
+    }, 300); // 300ms debounce
 
-    doFetchIndices();
-  }, [http, state.dataSourceId]);
+    // Cleanup timeout if effect runs again before timeout completes
+    return () => clearTimeout(timeoutId);
+  }, [http, state.dataSourceId, state.dataSourceName, hasValidDataSourceSelection]);
 
   return {
     renderDataSourceComponent,

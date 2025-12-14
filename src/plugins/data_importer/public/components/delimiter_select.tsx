@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { i18n } from '@osd/i18n';
-import { EuiTitle, EuiSelect } from '@elastic/eui';
+import { EuiFormRow, EuiSelect } from '@elastic/eui';
 import { CSV_SUPPORTED_DELIMITERS } from '../../common/constants';
 
 export interface DelimiterSelectProps {
@@ -15,14 +15,11 @@ export interface DelimiterSelectProps {
 
 export const DelimiterSelect = ({ onDelimiterChange, initialDelimiter }: DelimiterSelectProps) => {
   return (
-    <div>
-      <EuiTitle size="xs">
-        <span>
-          {i18n.translate('dataImporter.delimiter', {
-            defaultMessage: 'Delimiter options',
-          })}
-        </span>
-      </EuiTitle>
+    <EuiFormRow
+      label={i18n.translate('dataImporter.delimiter', {
+        defaultMessage: 'Delimiter options',
+      })}
+    >
       <EuiSelect
         options={CSV_SUPPORTED_DELIMITERS.map((delimiterCharacter: string) => {
           return { value: delimiterCharacter, text: delimiterCharacter };
@@ -30,6 +27,6 @@ export const DelimiterSelect = ({ onDelimiterChange, initialDelimiter }: Delimit
         onChange={onDelimiterChange}
         value={initialDelimiter}
       />
-    </div>
+    </EuiFormRow>
   );
 };

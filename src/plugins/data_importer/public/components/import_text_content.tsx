@@ -58,12 +58,8 @@ export const ImportTextContentBody = ({
       <EuiFlexGroup direction="column">
         <EuiFlexItem>
           <EuiFlexGroup justifyContent="flexStart" gutterSize="s">
-            <EuiFlexItem grow={false}>
-              <EuiText>
-                {i18n.translate('dataImporter.file', {
-                  defaultMessage: 'File format:',
-                })}
-              </EuiText>
+            <EuiFlexItem grow={false} style={{ justifyContent: 'center' }}>
+              <EuiText>File Format: </EuiText>
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
               <EuiSelect

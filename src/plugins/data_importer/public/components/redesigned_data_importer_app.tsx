@@ -69,6 +69,7 @@ import { previewFile } from '../lib/preview_file';
 import { EnhancedPreviewComponent } from './enhanced_preview_table';
 import { catIndices } from '../lib/cat_indices';
 import { ImportTextContentBody } from './import_text_content';
+import { DelimiterSelect } from './delimiter_select';
 import './redesigned_data_importer.scss';
 
 interface RedesignedDataImporterPluginAppProps {
@@ -105,12 +106,16 @@ export const RedesignedDataImporterPluginApp = ({
   const [indexName, setIndexName] = useState<string>('');
   const [inputFile, setInputFile] = useState<File | undefined>();
   const [textInput, setTextInput] = useState<string>('');
-  const [textFileType, setTextFileType] = useState<string>('json');
+  const [textFileType, setTextFileType] = useState<string>(
+    config.enabledFileTypes.length > 0 ? config.enabledFileTypes[0] : 'json'
+  );
   const [dataSourceId, setDataSourceId] = useState<string | undefined>();
   const [dataSourceName, setDataSourceName] = useState<string>('');
   const [indexOptions, setIndexOptions] = useState<Array<{ label: string }>>([]);
   const [createMode, setCreateMode] = useState<boolean>(false);
   const [groqInput, setGroqInput] = useState<string>('');
+  const [delimiter, setDelimiter] = useState<string>(CSV_SUPPORTED_DELIMITERS[0]);
+  const [showDelimiterChoice, setShowDelimiterChoice] = useState<boolean>(false);
 
   // Step 2 state - Data configuration and preview
   const [filePreviewData, setFilePreviewData] = useState<PreviewResponse>({
@@ -169,8 +174,10 @@ export const RedesignedDataImporterPluginApp = ({
       const file = files[0];
       setInputFile(file);
       setTextInput(''); // Clear text input when file is selected
+      updateDelimiterVisibility(file, textFileType);
     } else {
       setInputFile(undefined);
+      updateDelimiterVisibility(undefined, textFileType);
     }
   };
 
@@ -183,6 +190,17 @@ export const RedesignedDataImporterPluginApp = ({
 
   const onTextFileTypeChange = (fileType: string) => {
     setTextFileType(fileType);
+    updateDelimiterVisibility(inputFile, fileType);
+  };
+
+  const onDelimiterChange = (e: any) => {
+    setDelimiter(e.target.value);
+  };
+
+  const updateDelimiterVisibility = (file?: File, textType?: string) => {
+    const isFileCSV = file && extname(file.name) === `.${CSV_FILE_TYPE}`;
+    const isTextCSV = textType === CSV_FILE_TYPE;
+    setShowDelimiterChoice(isFileCSV || isTextCSV);
   };
 
   const previewData = async () => {
@@ -202,7 +220,7 @@ export const RedesignedDataImporterPluginApp = ({
           fileExtension,
           indexName,
           previewCount: config.filePreviewDocumentsCount,
-          delimiter: CSV_SUPPORTED_DELIMITERS[0],
+          delimiter,
           selectedDataSourceId: dataSourceId,
         });
       } else if (textInput.trim()) {
@@ -250,7 +268,7 @@ export const RedesignedDataImporterPluginApp = ({
           fileExtension,
           indexName,
           previewCount: config.filePreviewDocumentsCount,
-          delimiter: CSV_SUPPORTED_DELIMITERS[0],
+          delimiter,
           selectedDataSourceId: dataSourceId,
         });
       }
@@ -306,7 +324,7 @@ export const RedesignedDataImporterPluginApp = ({
           indexName,
           createMode,
           fileExtension: extname(inputFile.name),
-          delimiter: CSV_SUPPORTED_DELIMITERS[0],
+          delimiter,
           selectedDataSourceId: dataSourceId,
           mapping: filePreviewData.predictedMapping,
         });
@@ -354,7 +372,7 @@ export const RedesignedDataImporterPluginApp = ({
           indexName,
           createMode,
           fileExtension,
-          delimiter: CSV_SUPPORTED_DELIMITERS[0],
+          delimiter,
           selectedDataSourceId: dataSourceId,
           mapping: filePreviewData.predictedMapping,
         });
@@ -406,9 +424,12 @@ export const RedesignedDataImporterPluginApp = ({
     setCurrentStep(1);
     setInputFile(undefined);
     setTextInput('');
-    setTextFileType('json');
+    setTextFileType(config.enabledFileTypes.length > 0 ? config.enabledFileTypes[0] : 'json');
     setGroqInput('');
+    setIndexName('');
     setDataSourceName('');
+    setDelimiter(CSV_SUPPORTED_DELIMITERS[0]);
+    setShowDelimiterChoice(false);
     setFilePreviewData({ documents: [], predictedMapping: {} });
     setImportStats(null);
     setImportErrors([]);
@@ -445,6 +466,27 @@ export const RedesignedDataImporterPluginApp = ({
     }
   }, [http, dataSourceId]);
 
+  // File size and text length validation
+  useEffect(() => {
+    if (inputFile && inputFile.size > config.maxFileSizeBytes) {
+      notifications.toasts.addDanger(
+        i18n.translate('dataImporter.fileTooLarge', {
+          defaultMessage: 'File is too large. Maximum size allowed is {maxSize} MB.',
+          values: { maxSize: Math.round(config.maxFileSizeBytes / (1024 * 1024)) },
+        })
+      );
+    }
+
+    if (textInput && textInput.length > config.maxTextCount) {
+      notifications.toasts.addDanger(
+        i18n.translate('dataImporter.textTooLong', {
+          defaultMessage: 'Text exceeds {maxTextCount} characters',
+          values: { maxTextCount: config.maxTextCount },
+        })
+      );
+    }
+  }, [inputFile, textInput, config.maxFileSizeBytes, config.maxTextCount, notifications.toasts]);
+
   const renderDataSourceComponent = useMemo(() => {
     return (
       <div>
@@ -469,7 +511,9 @@ export const RedesignedDataImporterPluginApp = ({
 
   // Enable preview when user has index name, data source (if required), and data (file or text)
   const hasValidIndex = Boolean(indexName && indexName.trim());
-  const hasValidData = Boolean(inputFile || (textInput && textInput.trim()));
+  const hasValidFile = Boolean(inputFile && inputFile.size <= config.maxFileSizeBytes);
+  const hasValidText = Boolean(textInput && textInput.trim() && textInput.length <= config.maxTextCount);
+  const hasValidData = hasValidFile || hasValidText;
   const hasValidDataSource = !dataSourceEnabled || Boolean(dataSourceId || dataSourceName);
   const canProceedToStep2 = hasValidIndex && hasValidData && hasValidDataSource;
   const canProceedToStep3 = filePreviewData.documents.length > 0;
@@ -495,11 +539,13 @@ export const RedesignedDataImporterPluginApp = ({
 
   // Render step progress indicator
   const renderStepProgress = () => (
-    <div className="step-progress-container">
+    <div className={`step-progress-container step-${currentStep}`}>
       <EuiFlexGroup justifyContent="center" alignItems="center" gutterSize="l">
         {steps.map((step, index) => (
           <EuiFlexItem grow={false} key={index}>
-            <div className="step-indicator">
+            <div className={`step-indicator ${
+              step.isComplete ? 'completed' : step.isActive ? 'active' : 'inactive'
+            }`}>
               <div
                 className={`step-circle ${
                   step.isComplete ? 'completed' : step.isActive ? 'active' : 'inactive'
@@ -512,7 +558,7 @@ export const RedesignedDataImporterPluginApp = ({
           </EuiFlexItem>
         ))}
       </EuiFlexGroup>
-      <EuiSpacer size="xl" />
+      <EuiSpacer size="s" />
     </div>
   );
 
@@ -522,7 +568,7 @@ export const RedesignedDataImporterPluginApp = ({
       <div className="wizard-step-container">
         {renderStepProgress()}
 
-        <EuiTitle size="s">
+        <EuiTitle size="xs">
           <p>Step 1: Select Data Source & Upload Data</p>
         </EuiTitle>
         <EuiText color="subdued" size="s">
@@ -530,6 +576,8 @@ export const RedesignedDataImporterPluginApp = ({
             Choose your data source, target index, and upload your data file or enter text directly.
           </p>
         </EuiText>
+
+        <EuiSpacer size="s" />
 
         <EuiFlexGroup>
           {/* Left Panel - Configuration */}
@@ -567,8 +615,8 @@ export const RedesignedDataImporterPluginApp = ({
 
               {/* GROQ Input - Optional */}
               <EuiFormRow
-                label="Delimiter/Groq"
-                helpText="Optional: Enter GROQ queries or delimiter settings"
+                label="Groq command"
+                helpText="Optional: Enter GROQ queries"
               >
                 <EuiTextArea
                   value={groqInput}
@@ -578,6 +626,14 @@ export const RedesignedDataImporterPluginApp = ({
                   resize="vertical"
                 />
               </EuiFormRow>
+
+              {/* Delimiter Selection - Show only for CSV files */}
+              {showDelimiterChoice && (
+                <DelimiterSelect
+                  onDelimiterChange={onDelimiterChange}
+                  initialDelimiter={delimiter}
+                />
+              )}
 
               <EuiSpacer size="m" />
 
@@ -597,9 +653,9 @@ export const RedesignedDataImporterPluginApp = ({
           <EuiFlexItem grow={2}>
             <EuiPanel
               className={`drag-drop-area ${inputFile || textInput.trim() ? 'has-file' : ''}`}
-              style={{ height: '60vh', border: '2px dashed #D3DAE6', width: '100%' }}
+              style={{ height: '60vh', border: '2px dashed #D3DAE6', width: '100%', display: 'flex', flexDirection: 'column' }}
             >
-              <div style={{ textAlign: 'center', width: '100%' }}>
+              <div style={{ textAlign: 'center', width: '100%', display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <div
                   style={{
                     display: 'flex',
@@ -612,8 +668,9 @@ export const RedesignedDataImporterPluginApp = ({
                     initialPromptText="Drop files here or click to upload"
                     onChange={onFileChange}
                     display="large"
+                    fullWidth={true}
                     aria-label="File picker"
-                    accept=".csv,.json,.ndjson,.txt,.xml,.har"
+                    accept={config.enabledFileTypes.map(type => `.${type}`).join(',')}
                   />
                 </div>
 
@@ -623,7 +680,7 @@ export const RedesignedDataImporterPluginApp = ({
                 </EuiText>
                 <EuiSpacer size="s" />
 
-                <div style={{ height: '25vh', overflow: 'hidden', position: 'relative' }}>
+                <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
                   <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10 }}>
                     <EuiPopover
                       button={
@@ -645,25 +702,38 @@ export const RedesignedDataImporterPluginApp = ({
                         </EuiTitle>
                         <EuiSpacer size="s" />
                         <EuiText size="s">
-                          <p><strong>Character Limit:</strong> 1,000,000 characters</p>
-                          <p><strong>Supported Formats:</strong> JSON, CSV, NDJSON, TXT</p>
-                          <p><strong>File Size Equivalent:</strong> ~1MB of text data</p>
-                          <p><strong>Typical Usage:</strong></p>
+                          <p>
+                            <strong>Character Limit:</strong> 1,000,000 characters
+                          </p>
+                          <p>
+                            <strong>Supported Formats:</strong> JSON, CSV, NDJSON, TXT
+                          </p>
+                          <p>
+                            <strong>File Size Equivalent:</strong> ~1MB of text data
+                          </p>
+                          <p>
+                            <strong>Typical Usage:</strong>
+                          </p>
                           <ul>
                             <li>Small CSV: ~10,000-50,000 characters</li>
                             <li>Medium JSON: ~100,000-300,000 characters</li>
                             <li>Large dataset: Up to 1,000,000 characters</li>
                           </ul>
-                          <p><em>The editor will show a character counter and highlight when approaching the limit.</em></p>
+                          <p>
+                            <em>
+                              The editor will show a character counter and highlight when
+                              approaching the limit.
+                            </em>
+                          </p>
                         </EuiText>
                       </div>
                     </EuiPopover>
                   </div>
                   <ImportTextContentBody
                     onTextChange={onTextInputChange}
-                    enabledFileTypes={['json', 'csv', 'ndjson', 'txt']}
+                    enabledFileTypes={config.enabledFileTypes}
                     onFileTypeChange={onTextFileTypeChange}
-                    characterLimit={1000000}
+                    characterLimit={config.maxTextCount}
                     initialFileType={textFileType}
                   />
                 </div>
@@ -671,8 +741,6 @@ export const RedesignedDataImporterPluginApp = ({
             </EuiPanel>
           </EuiFlexItem>
         </EuiFlexGroup>
-
-        <EuiSpacer size="xl" />
       </div>
     </EuiPageContent>
   );
@@ -685,7 +753,7 @@ export const RedesignedDataImporterPluginApp = ({
 
         <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
           <EuiFlexItem grow={false}>
-            <EuiTitle size="m">
+            <EuiTitle size="xs">
               <h3>Step 2: Configure & Preview Data</h3>
             </EuiTitle>
           </EuiFlexItem>
@@ -737,13 +805,23 @@ export const RedesignedDataImporterPluginApp = ({
 
               <EuiSpacer size="l" />
 
-              <EuiFlexGroup>
+              <EuiFlexGroup gutterSize="s">
+                <EuiFlexItem>
+                  <EuiButton
+                    iconType="arrowLeft"
+                    size="s"
+                    onClick={() => setCurrentStep(1)}
+                  >
+                    Back
+                  </EuiButton>
+                </EuiFlexItem>
                 <EuiFlexItem>
                   <EuiButton
                     color="danger"
                     size="s"
                     onClick={() => {
                       setCurrentStep(1);
+                      setIndexName('');
                       setFilePreviewData({ documents: [], predictedMapping: {} });
                     }}
                   >
@@ -819,9 +897,11 @@ export const RedesignedDataImporterPluginApp = ({
       <div className="wizard-step-container">
         {renderStepProgress()}
 
-        <EuiTitle size="m">
+        <EuiTitle size="xs">
           <h3>Step 3: Import Complete</h3>
         </EuiTitle>
+
+        <EuiSpacer size="s" />
 
         <EuiFlexGroup>
           {/* Left Panel - Import Details */}
@@ -856,7 +936,7 @@ export const RedesignedDataImporterPluginApp = ({
                 />
               )}
 
-              <EuiSpacer size="l" />
+              <EuiSpacer size="m" />
 
               <EuiFlexGroup>
                 <EuiFlexItem>
@@ -924,6 +1004,7 @@ export const RedesignedDataImporterPluginApp = ({
       <I18nProvider>
         <div className="redesigned-data-importer">
           <navigation.ui.TopNavMenu appName={PLUGIN_ID} useDefaultBehaviors={true} />
+          <EuiPageHeader pageTitle="Data Importer" paddingSize="s" />
           <EuiPage paddingSize="s">
             <EuiPageBody component="main">
               {currentStep === 1 && renderStep1()}

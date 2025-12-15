@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   EuiPageContent,
   EuiTitle,
@@ -17,6 +17,10 @@ import {
   EuiButton,
   EuiLoadingSpinner,
   EuiCallOut,
+  EuiTextArea,
+  EuiButtonIcon,
+  EuiPopover,
+  EuiText,
 } from '@elastic/eui';
 import { EnhancedPreviewComponent } from '../enhanced_preview_table';
 import { PreviewResponse } from '../../types';
@@ -45,6 +49,7 @@ interface DataConfigureStepProps {
   onClear: () => void;
   onImport: () => void;
   onTimeFieldChange: (selected: Array<{ label: string }>) => void;
+  onGroqInputChange: (text: string) => void;
 
   // Validation
   canProceedToStep3: boolean;
@@ -70,9 +75,12 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
   onClear,
   onImport,
   onTimeFieldChange,
+  onGroqInputChange,
   canProceedToStep3,
   renderStepProgress,
 }) => {
+  const [isGroqInfoOpen, setIsGroqInfoOpen] = useState<boolean>(false);
+
   // Check if data formatting section should be shown
   const hasDataFormatting = (groqInput && groqInput.trim()) || showDelimiterChoice;
   return (
@@ -123,7 +131,98 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
                   />
                 </EuiFormRow>
 
-                {/* Simplified - removed data formatting section to save space */}
+                <EuiSpacer size="l" />
+
+                {/* Additional Settings Section */}
+                <EuiTitle size="xs">
+                  <h4>Additional settings</h4>
+                </EuiTitle>
+                <EuiSpacer size="m" />
+
+                {/* GROQ Input */}
+                <EuiFormRow
+                  label={
+                    <EuiFlexGroup alignItems="center" gutterSize="xs" responsive={false}>
+                      <EuiFlexItem grow={false}>Groq command - optional</EuiFlexItem>
+                      <EuiFlexItem grow={false}>
+                        <EuiPopover
+                          button={
+                            <EuiButtonIcon
+                              iconType="questionInCircle"
+                              aria-label="GROQ command information"
+                              size="s"
+                              onClick={() => setIsGroqInfoOpen(!isGroqInfoOpen)}
+                            />
+                          }
+                          isOpen={isGroqInfoOpen}
+                          closePopover={() => setIsGroqInfoOpen(false)}
+                          panelPaddingSize="m"
+                          anchorPosition="downLeft"
+                        >
+                          <div style={{ maxWidth: '350px' }}>
+                            <EuiTitle size="xs">
+                              <h4>GROQ Command Help</h4>
+                            </EuiTitle>
+                            <EuiSpacer size="s" />
+                            <EuiText size="s">
+                              <p>
+                                <strong>GROQ</strong> is a query language for filtering and
+                                transforming your data.
+                              </p>
+
+                              <p>
+                                <strong>Supported File Types:</strong>
+                              </p>
+                              <ul>
+                                <li>✅ JSON/NDJSON - Full support</li>
+                                <li>✅ CSV/TSV - After conversion to JSON</li>
+                                <li>✅ YAML - After conversion to JSON</li>
+                                <li>✅ XML - After conversion to JSON</li>
+                                <li>⚠️ TXT - Only if contains structured data</li>
+                              </ul>
+
+                              <p>
+                                <strong>Common Examples:</strong>
+                              </p>
+                              <ul>
+                                <li>
+                                  <code>*[level == "ERROR"]</code> - Filter errors
+                                </li>
+                                <li>
+                                  <code>*[user_id == 12345]</code> - Filter by user
+                                </li>
+                                <li>
+                                  <code>*[service match "*auth*"]</code> - Service contains "auth"
+                                </li>
+                                <li>
+                                  <code>*[level == "ERROR"]&#123;timestamp, message&#125;</code> -
+                                  Select specific fields
+                                </li>
+                              </ul>
+
+                              <p>
+                                <em>
+                                  GROQ works on the parsed JSON structure of your data, not the raw
+                                  file content.
+                                </em>
+                              </p>
+                            </EuiText>
+                          </div>
+                        </EuiPopover>
+                      </EuiFlexItem>
+                    </EuiFlexGroup>
+                  }
+                >
+                  <EuiTextArea
+                    value={groqInput || ''}
+                    onChange={(e) => onGroqInputChange(e.target.value)}
+                    placeholder="Optional: Enter GROQ queries to filter or transform your data"
+                    resize="vertical"
+                    style={{
+                      minHeight: '100px',
+                    }}
+                  />
+                </EuiFormRow>
               </div>
 
               {/* Action Buttons - Pinned to bottom */}

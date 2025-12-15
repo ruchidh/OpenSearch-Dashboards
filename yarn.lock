@@ -5351,6 +5351,11 @@
   resolved "https://registry.yarnpkg.com/@node-rs/xxhash-android-arm64/-/xxhash-android-arm64-1.4.0.tgz#2290c53ceabda804afb4c45679613d833a6385a0"
   integrity sha512-BZzQO5jlgsIr9HhiqTwZjYqlfVeZiu+7PaoAdNEOq+i/SjyAqv1jGSkyek4rBSAiodyNkXcbE0eQtomeN6a55w==
 
+"@node-rs/xxhash-darwin-arm64@1.3.0":
+  version "1.3.0"
+  resolved "https://registry.npmjs.org/@node-rs/xxhash-darwin-arm64/-/xxhash-darwin-arm64-1.3.0.tgz#ca2a50ef1d127c34869017f44afa7288f9a20295"
+  integrity sha512-2SKiITOr5Lt35vv2PpdcKV7mhdfudR0Cheuk9dj1fBx6hXrl9lDf5Yu+RWPC1j8CskSYbxFqWQC1iSZJD1MFcw==
+
 "@node-rs/xxhash-darwin-arm64@1.4.0":
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/@node-rs/xxhash-darwin-arm64/-/xxhash-darwin-arm64-1.4.0.tgz#96df4f48b13deb6899e84ed0882bdbd0a4856f13"
@@ -15850,9 +15855,9 @@ fs.realpath@^1.0.0:
   resolved "https://registry.yarnpkg.com/fs.realpath/-/fs.realpath-1.0.0.tgz#1504ad2523158caa40db4a2787cb01411994ea4f"
   integrity sha1-FQStJSMVjKpA20onh8sBQRmU6k8=
 
-fsevents@^2.1.2:
+fsevents@^2.1.2, fsevents@^2.3.3:
   version "2.3.3"
-  resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.3.3.tgz#cac6407785d03675a2a5e1a5305c697b347d90d6"
+  resolved "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz#cac6407785d03675a2a5e1a5305c697b347d90d6"
   integrity sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==
 
 fsevents@^2.3.2, fsevents@~2.3.2:
@@ -24454,6 +24459,11 @@ sass-embedded-darwin-arm64@1.66.1:
   version "1.66.1"
   resolved "https://registry.yarnpkg.com/sass-embedded-darwin-arm64/-/sass-embedded-darwin-arm64-1.66.1.tgz#7f7490965d3687795d30a91fe373e9840894eb10"
   integrity sha512-XdvA4KThDRLvUweMGWEsEd3swOSeiGuLelNUKbvB4H3Peh+O0m9XfKwWxh1FJZP0gVK3moMXPyVflYrUWVHGCA==
+
+sass-embedded-darwin-arm64@^1.96.0:
+  version "1.96.0"
+  resolved "https://registry.npmjs.org/sass-embedded-darwin-arm64/-/sass-embedded-darwin-arm64-1.96.0.tgz#d94f483e02963fd56d9e081ac639fc25f358ab28"
+  integrity sha512-OMvN5NWcrrisC24ZR3GyaWJ1uFxw25qLnUkpEso9TSlaMWiomjU82/uQ/AkQvIMl+EMlJqeYLxZWvq/byLH5Xg==
 
 sass-embedded-darwin-x64@1.66.1:
   version "1.66.1"

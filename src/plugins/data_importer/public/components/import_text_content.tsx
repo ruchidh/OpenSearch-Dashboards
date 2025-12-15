@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import {
   EuiCodeEditor,
@@ -29,6 +29,7 @@ export interface ImportTextContentBodyProps {
   initialFileType: string;
   isTextEditorInfoOpen?: boolean;
   setIsTextEditorInfoOpen?: (isOpen: boolean) => void;
+  value?: string; // Add value prop to sync with parent state
 }
 
 export const ImportTextContentBody = ({
@@ -39,10 +40,17 @@ export const ImportTextContentBody = ({
   initialFileType,
   isTextEditorInfoOpen,
   setIsTextEditorInfoOpen,
+  value = '',
 }: ImportTextContentBodyProps) => {
-  const [codeEditorText, setCodeEditorText] = useState<string>('');
+  const [codeEditorText, setCodeEditorText] = useState<string>(value);
   const [fileType, setFileType] = useState<string>(initialFileType);
-  const [numCharacters, setNumCharacters] = useState<number>(0);
+  const [numCharacters, setNumCharacters] = useState<number>(value.length);
+
+  // Sync internal state with external value prop
+  useEffect(() => {
+    setCodeEditorText(value);
+    setNumCharacters(value.length);
+  }, [value]);
   const options = enabledFileTypes.map((type) => {
     return {
       value: type,
@@ -132,7 +140,7 @@ export const ImportTextContentBody = ({
         <EuiFlexItem grow={1}>
           <div
             style={{
-              height: 'calc(60vh - 100px)',
+              height: '100px',
               border: '1px solid #D3DAE6',
               borderRadius: '6px',
             }}

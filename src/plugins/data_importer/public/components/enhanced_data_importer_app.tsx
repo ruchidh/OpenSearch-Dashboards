@@ -29,6 +29,12 @@ import {
   EuiFilePicker,
   EuiCallOut,
   EuiHorizontalRule,
+  EuiTabs,
+  EuiTab,
+  EuiIcon,
+  EuiToolTip,
+  EuiPopover,
+  EuiPopoverTitle,
 } from '@elastic/eui';
 import { extname } from 'path';
 import {
@@ -83,6 +89,15 @@ export const EnhancedDataImporterPluginApp = ({
   const [isImporting, setIsImporting] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [groqCommand, setGroqCommand] = useState<string>('');
+  const [groqQueries, setGroqQueries] = useState<
+    Array<{
+      query: string;
+      results: Array<Record<string, any>>;
+      title: string;
+    }>
+  >([]);
+  const [activeQueryTab, setActiveQueryTab] = useState<number>(-1);
+  const [isGroqHelpOpen, setIsGroqHelpOpen] = useState<boolean>(false);
   const [filePreviewData, setFilePreviewData] = useState<PreviewResponse>({
     documents: [],
     predictedMapping: {},
@@ -274,6 +289,97 @@ export const EnhancedDataImporterPluginApp = ({
     console.log('Delete index:', indexName);
   };
 
+  const executeGroqQueries = () => {
+    if (!groqCommand.trim() || fullFileData.length === 0) {
+      setGroqQueries([]);
+      return;
+    }
+
+    // Parse multiple commands separated by newlines and comments
+    const commands = groqCommand
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('//'))
+      .map((query, index) => {
+        // Extract title from comment if available
+        const lines = groqCommand.split('\n');
+        let title = `Query ${index + 1}`;
+
+        // Look for comment before this query
+        const queryLineIndex = lines.findIndex((line) => line.trim() === query);
+        if (queryLineIndex > 0) {
+          const prevLine = lines[queryLineIndex - 1].trim();
+          if (prevLine.startsWith('//')) {
+            title = prevLine.replace('//', '').trim();
+          }
+        }
+
+        return { query, title };
+      });
+
+    // Execute each GROQ-like query (simplified client-side filtering)
+    const queryResults = commands.map(({ query, title }) => {
+      let results = [...fullFileData];
+
+      try {
+        // Basic GROQ-like pattern matching (simplified)
+        if (query.includes('[') && query.includes(']')) {
+          const conditionMatch = query.match(/\*\[(.*?)\]/);
+          if (conditionMatch) {
+            const condition = conditionMatch[1];
+
+            // Handle == conditions
+            if (condition.includes('==')) {
+              const [field, value] = condition
+                .split('==')
+                .map((s) => s.trim().replace(/['"]/g, ''));
+              results = results.filter((item) => item[field] === value);
+            }
+            // Handle match conditions
+            else if (condition.includes('match')) {
+              const matchPattern = condition.match(/(\w+)\s+match\s+"([^"]+)"/);
+              if (matchPattern) {
+                const [, field, pattern] = matchPattern;
+                const searchTerm = pattern.replace(/\*/g, '');
+                results = results.filter(
+                  (item) =>
+                    item[field] &&
+                    item[field].toString().toLowerCase().includes(searchTerm.toLowerCase())
+                );
+              }
+            }
+            // Handle >= conditions
+            else if (condition.includes('>=')) {
+              const [field, value] = condition
+                .split('>=')
+                .map((s) => s.trim().replace(/['"]/g, ''));
+              results = results.filter((item) => item[field] >= value);
+            }
+            // Handle || (OR) conditions
+            else if (condition.includes('||')) {
+              const orConditions = condition.split('||');
+              results = results.filter((item) =>
+                orConditions.some((cond) => {
+                  const [field, value] = cond.split('==').map((s) => s.trim().replace(/['"]/g, ''));
+                  return item[field] === value;
+                })
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error executing GROQ query:', query, error);
+        // If query fails, return empty results for this query
+        results = [];
+      }
+
+      return { query, title, results };
+    });
+
+    setGroqQueries(queryResults);
+    setActiveQueryTab(0);
+  };
+
   const parseFullFile = async (file: File) => {
     try {
       const text = await file.text();
@@ -307,6 +413,44 @@ export const EnhancedDataImporterPluginApp = ({
         // Parse NDJSON
         const lines = text.split('\n').filter((line) => line.trim());
         const rows = lines.map((line) => JSON.parse(line));
+        setFullFileData(rows);
+      } else if (fileExtension === '.txt') {
+        // Parse TXT files (similar to server-side TXT processor logic)
+        const lines = text.split('\n');
+        const rows = lines
+          .map((line, index) => {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) return null;
+
+            // Try to extract timestamp, level, and message from common log formats
+            const timestampRegex = /^(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})/;
+            const levelRegex = /\[(INFO|DEBUG|WARN|ERROR|SUCCESS|FATAL|TRACE)\]/i;
+
+            const timestampMatch = trimmedLine.match(timestampRegex);
+            const levelMatch = trimmedLine.match(levelRegex);
+
+            let timestamp = timestampMatch ? timestampMatch[1] : new Date().toISOString();
+            let level = levelMatch ? levelMatch[1].toUpperCase() : 'INFO';
+
+            // Remove timestamp and level from message if found
+            let message = trimmedLine;
+            if (timestampMatch) {
+              message = message.replace(timestampMatch[0], '').trim();
+            }
+            if (levelMatch) {
+              message = message.replace(levelMatch[0], '').trim();
+            }
+
+            return {
+              '@timestamp': timestamp,
+              level,
+              message: message || trimmedLine,
+              line_number: index + 1,
+              raw_line: trimmedLine,
+            };
+          })
+          .filter((row) => row !== null);
+
         setFullFileData(rows);
       }
     } catch (error) {
@@ -499,16 +643,95 @@ export const EnhancedDataImporterPluginApp = ({
 
                       {/* GROQ Command */}
                       <div className="groq-command-container">
-                        <EuiTitle size="xs">
-                          <h3>GROQ Command:</h3>
-                        </EuiTitle>
+                        <EuiFlexGroup alignItems="center" gutterSize="s">
+                          <EuiFlexItem grow={false}>
+                            <EuiTitle size="xs">
+                              <h3>GROQ Commands:</h3>
+                            </EuiTitle>
+                          </EuiFlexItem>
+                          <EuiFlexItem grow={false}>
+                            <EuiPopover
+                              button={
+                                <EuiToolTip content="Click for GROQ query examples">
+                                  <EuiIcon
+                                    type="questionInCircle"
+                                    color="primary"
+                                    onClick={() => setIsGroqHelpOpen(!isGroqHelpOpen)}
+                                    style={{ cursor: 'pointer' }}
+                                  />
+                                </EuiToolTip>
+                              }
+                              isOpen={isGroqHelpOpen}
+                              closePopover={() => setIsGroqHelpOpen(false)}
+                              panelPaddingSize="m"
+                            >
+                              <EuiPopoverTitle>GROQ Query Examples</EuiPopoverTitle>
+                              <div style={{ width: '400px' }}>
+                                <EuiText size="s">
+                                  <h4>Basic Queries:</h4>
+                                  <pre>
+                                    {`// Find specific log level
+*[level == "ERROR"]
+*[level == "WARN"]
+
+// Text search in messages
+*[message match "*payment*"]
+*[message match "*database*"]
+*[message match "*user*"]
+
+// Time-based queries
+*[@timestamp >= "2024-01-15T10:30:00"]
+*[@timestamp < "2024-01-15T11:00:00"]
+
+// Multiple conditions (OR)
+*[level == "ERROR" || level == "WARN"]
+*[level == "INFO" || level == "SUCCESS"]
+
+// Line number filtering
+*[line_number >= 10]
+*[line_number < 50]`}
+                                  </pre>
+                                </EuiText>
+                                <EuiSpacer size="s" />
+                                <EuiText size="s" color="subdued">
+                                  <p>
+                                    <strong>Tips:</strong>
+                                  </p>
+                                  <ul>
+                                    <li>Use // for comments to describe queries</li>
+                                    <li>One query per line</li>
+                                    <li>Each query creates a separate tab</li>
+                                    <li>Field names are case-sensitive</li>
+                                  </ul>
+                                </EuiText>
+                              </div>
+                            </EuiPopover>
+                          </EuiFlexItem>
+                        </EuiFlexGroup>
                         <EuiSpacer size="s" />
                         <EuiTextArea
-                          placeholder="Enter GROQ command here..."
+                          placeholder={`Enter multiple GROQ commands (one per line):
+
+// Find all error logs
+*[level == "ERROR"]
+
+// Find payment entries
+*[message match "*payment*"]
+
+// Recent logs
+*[@timestamp >= "2024-01-15T10:30:00"]`}
                           value={groqCommand}
                           onChange={(e) => setGroqCommand(e.target.value)}
-                          rows={4}
+                          rows={6}
                         />
+                        <EuiSpacer size="s" />
+                        <EuiButton
+                          size="s"
+                          onClick={executeGroqQueries}
+                          isDisabled={!groqCommand.trim() || fullFileData.length === 0}
+                        >
+                          Execute Queries
+                        </EuiButton>
                       </div>
 
                       <EuiSpacer size="s" />
@@ -546,9 +769,33 @@ export const EnhancedDataImporterPluginApp = ({
                   <EuiFlexItem grow={2}>
                     <EuiPanel>
                       <EuiTitle size="s">
-                        <h2>Imported Data Preview</h2>
+                        <h2>Data Preview</h2>
                       </EuiTitle>
                       <EuiSpacer size="s" />
+
+                      {/* Tabs for multiple query results */}
+                      {groqQueries.length > 0 ? (
+                        <>
+                          <EuiTabs>
+                            <EuiTab
+                              onClick={() => setActiveQueryTab(-1)}
+                              isSelected={activeQueryTab === -1}
+                            >
+                              All Data ({fullFileData.length})
+                            </EuiTab>
+                            {groqQueries.map((queryResult, index) => (
+                              <EuiTab
+                                key={index}
+                                onClick={() => setActiveQueryTab(index)}
+                                isSelected={activeQueryTab === index}
+                              >
+                                {queryResult.title} ({queryResult.results.length})
+                              </EuiTab>
+                            ))}
+                          </EuiTabs>
+                          <EuiSpacer size="s" />
+                        </>
+                      ) : null}
 
                       <div className="preview-table-container">
                         {isLoadingPreview ? (
@@ -560,7 +807,9 @@ export const EnhancedDataImporterPluginApp = ({
                         ) : (
                           <EnhancedPreviewComponent
                             previewData={
-                              fullFileData.length > 0
+                              groqQueries.length > 0 && activeQueryTab >= 0
+                                ? groqQueries[activeQueryTab]?.results || []
+                                : fullFileData.length > 0
                                 ? fullFileData
                                 : filePreviewData.documents || []
                             }

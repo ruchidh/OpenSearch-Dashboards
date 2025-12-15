@@ -1,0 +1,1019 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+.redesigned-data-importer {
+  height: calc(100vh - 100px); // Account for navigation and page header
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  .euiPage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0; // Remove default padding
+  }
+
+  .euiPageBody {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0; // Remove default padding
+  }
+
+  // Wizard Step Container
+  .wizard-step-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    flex: 1;
+    overflow: hidden;
+    padding: 16px; // Add padding here instead
+  }
+
+  // Step progress indicator
+  .step-progress-container {
+
+    .step-indicator {
+      text-align: center;
+      position: relative;
+
+      .step-circle {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        line-height: 40px;
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 8px;
+        transition: all 0.3s ease;
+        border: 2px solid;
+
+        &.active {
+          background: #006bb4;
+          color: white;
+          border-color: #006bb4;
+          box-shadow: 0 0 0 4px rgba(0, 107, 180, 0.2);
+        }
+
+        &.completed {
+          background: #017d73;
+          color: white;
+          border-color: #017d73;
+        }
+
+        &.inactive {
+          background: #f8f9fa;
+          color: #69707d;
+          border-color: #d3dae6;
+        }
+      }
+
+      .step-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #69707d;
+        transition: color 0.3s ease;
+
+        &.active {
+          color: #006bb4;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+
+  // Drag and drop area styling to match mockup
+  .drag-drop-area {
+    border: 3px dashed #D3DAE6;
+    border-radius: 8px;
+    background: #FBFCFD;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    text-align: center;
+    padding: 16px;
+    position: relative;
+
+    // Constrain text editor height
+    .euiCodeEditor {
+      max-height: 20vh !important;
+      height: 20vh !important;
+    }
+
+    .euiPageContentBody {
+      height: 100% !important;
+      overflow: hidden !important;
+    }
+
+    &.has-file {
+      border-color: #017d73;
+      background: #f0f9ff;
+    }
+
+    .drop-zone-text {
+      font-size: 18px;
+      font-weight: 500;
+      color: #006bb4;
+      margin-bottom: 20px;
+    }
+
+    .or-divider {
+      width: 100%;
+      text-align: center;
+      margin: 20px 0;
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #D3DAE6;
+      }
+
+      span {
+        background: #FBFCFD;
+        padding: 0 20px;
+        font-weight: 600;
+        color: #69707d;
+      }
+    }
+  }
+
+  // Text area styling to match mockup
+  .text-import-area {
+    .text-area-label {
+      font-size: 16px;
+      font-weight: 600;
+      color: #343741;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .euiTextArea {
+      border: 2px solid #D3DAE6;
+      border-radius: 6px;
+      background: #f8f9fa;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      resize: vertical;
+
+      &:focus {
+        border-color: #006bb4;
+        box-shadow: 0 0 0 1px #006bb4;
+      }
+
+      &::placeholder {
+        color: #98a2b3;
+        font-style: italic;
+      }
+    }
+  }
+
+  // Left panel configuration styling
+  .config-panel {
+    background: white;
+    border: 2px solid #D3DAE6;
+    border-radius: 8px;
+    padding: 24px;
+
+    .config-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #343741;
+      margin-bottom: 20px;
+    }
+
+    .euiFormRow {
+      margin-bottom: 16px;
+
+      .euiFormLabel {
+        font-weight: 500;
+        color: #343741;
+      }
+
+      // GROQ text area styling
+      .euiTextArea {
+        font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        background-color: #f8f9fa;
+        border: 2px solid #D3DAE6;
+        border-radius: 6px;
+        resize: vertical;
+
+        &:focus {
+          border-color: #006bb4;
+          box-shadow: 0 0 0 1px #006bb4;
+        }
+
+        &::placeholder {
+          color: #98a2b3;
+          font-style: italic;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+      }
+    }
+
+    .preview-button {
+      background: #017d73;
+      border: none;
+      color: white;
+      font-weight: 600;
+      border-radius: 6px;
+      padding: 8px 16px;
+
+      &:hover {
+        background: #016b60;
+      }
+
+      &:disabled {
+        background: #98a2b3;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  // Step 2 specific styles
+  .data-config-section {
+    .config-form {
+      .euiFieldText[readonly] {
+        background: #f8f9fa;
+        color: #69707d;
+        cursor: not-allowed;
+      }
+    }
+
+    .action-buttons {
+      .clear-button {
+        background: #bd271e;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+
+        &:hover {
+          background: #a02622;
+        }
+      }
+
+      .import-button {
+        background: #017d73;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+
+        &:hover {
+          background: #016b60;
+        }
+
+        &:disabled {
+          background: #98a2b3;
+          cursor: not-allowed;
+        }
+      }
+    }
+  }
+
+  // Preview and errors panels
+  .preview-panel,
+  .errors-panel {
+    background: white;
+    border: 2px solid #D3DAE6;
+    border-radius: 8px;
+    padding: 20px;
+
+    .panel-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #343741;
+      margin-bottom: 16px;
+    }
+
+    .panel-content {
+      min-height: 200px;
+
+      &.loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      &.empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #69707d;
+        font-style: italic;
+      }
+    }
+  }
+
+  // Step 3 import details styling
+  .import-details-panel {
+    background: white;
+    border: 2px solid #D3DAE6;
+    border-radius: 8px;
+    padding: 24px;
+
+    .details-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #343741;
+      margin-bottom: 20px;
+    }
+
+    .euiDescriptionList {
+      .euiDescriptionList__title {
+        font-weight: 600;
+        color: #343741;
+      }
+
+      .euiDescriptionList__description {
+        color: #69707d;
+        font-family: 'Courier New', monospace;
+      }
+    }
+
+    .final-actions {
+      margin-top: 30px;
+
+      .restart-button {
+        background: #017d73;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+
+        &:hover {
+          background: #016b60;
+        }
+      }
+
+      .explore-button {
+        background: #006bb4;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+
+        &:hover {
+          background: #005a96;
+        }
+      }
+    }
+  }
+
+  // Navigation buttons
+  .nav-button {
+    font-weight: 600;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-size: 16px;
+
+    &.next-button {
+      background: #006bb4;
+      color: white;
+      border: none;
+
+      &:hover {
+        background: #005a96;
+      }
+    }
+
+    &.back-button {
+      background: transparent;
+      color: #006bb4;
+      border: 2px solid #006bb4;
+
+      &:hover {
+        background: #006bb4;
+        color: white;
+      }
+    }
+  }
+
+  // Enhanced File Picker
+  .file-picker-enhanced {
+    .euiFilePicker__input {
+      min-height: 140px;
+      border: 3px dashed #d3dae6;
+      border-radius: 12px;
+      background: #fbfcfd;
+      transition: all 0.3s ease;
+      position: relative;
+
+      &:hover {
+        border-color: #006bb4;
+        background: #f8f9fa;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 107, 180, 0.15);
+      }
+
+      &:focus {
+        border-color: #006bb4;
+        box-shadow: 0 0 0 1px #006bb4;
+      }
+    }
+
+    .euiFilePicker__prompt {
+      font-size: 18px;
+      font-weight: 600;
+      color: #343741;
+      margin-bottom: 8px;
+    }
+
+    .euiFilePicker__icon {
+      font-size: 48px;
+      color: #69707d;
+      margin-bottom: 16px;
+    }
+  }
+
+  // Progress Tracking
+  .progress-container {
+    .upload-progress {
+      .euiProgress {
+        height: 12px;
+        border-radius: 6px;
+        overflow: hidden;
+        background-color: #f1f3f4;
+
+        .euiProgress__bar {
+          transition: width 0.3s ease;
+        }
+      }
+
+      .progress-text {
+        margin-top: 12px;
+        font-size: 14px;
+        font-weight: 500;
+        text-align: center;
+        color: #343741;
+
+        &.success {
+          color: #017d73;
+        }
+
+        &.error {
+          color: #bd271e;
+        }
+      }
+    }
+
+    .import-progress {
+      .euiProgress {
+        height: 8px;
+        border-radius: 4px;
+        background-color: #e6f7ff;
+
+        &[data-euianimated="true"] {
+          .euiProgress__bar {
+            animation: importPulse 2s infinite;
+          }
+        }
+      }
+
+      @keyframes importPulse {
+
+        0%,
+        100% {
+          opacity: 0.8;
+        }
+
+        50% {
+          opacity: 1;
+        }
+      }
+    }
+  }
+
+  // Index Statistics Panel
+  .index-stats-panel {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid #d3dae6;
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #006bb4 0%, #017d73 100%);
+      border-radius: 8px 8px 0 0;
+    }
+
+    .euiStat {
+      .euiStat__title {
+        color: #343741;
+        font-weight: 700;
+      }
+
+      .euiStat__description {
+        color: #69707d;
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+      }
+    }
+  }
+
+  // Import Summary Panel (Post-import state)
+  .import-summary-panel {
+    background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+    border: 2px solid #017d73;
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+
+    &::before {
+      content: '✓';
+      position: absolute;
+      top: -12px;
+      left: 24px;
+      background: #017d73;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .summary-title {
+      color: #017d73;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+  }
+
+  // GROQ Query Interface
+  .groq-interface {
+    .groq-textarea {
+      font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      background-color: #fafbfc;
+      border: 2px solid #d3dae6;
+      border-radius: 8px;
+
+      &:focus {
+        border-color: #006bb4;
+        box-shadow: 0 0 0 1px #006bb4;
+      }
+    }
+
+    .groq-help-popover {
+      .euiPopover__panel {
+        max-width: 500px;
+
+        pre {
+          background-color: #f8f9fa;
+          padding: 12px;
+          border-radius: 6px;
+          font-size: 12px;
+          line-height: 1.4;
+          overflow-x: auto;
+        }
+      }
+    }
+
+    .query-tabs {
+      .euiTab {
+        font-size: 13px;
+
+        &--isSelected {
+          background-color: #006bb4;
+          color: white;
+          border-radius: 6px 6px 0 0;
+        }
+      }
+    }
+  }
+
+  // Enhanced Preview Table
+  .preview-container {
+    .preview-table {
+      border: 2px solid #d3dae6;
+      border-radius: 8px;
+      overflow: hidden;
+      min-height: 400px;
+      max-height: 700px;
+
+      .euiDataGrid {
+        .euiDataGrid__header {
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+          border-bottom: 2px solid #d3dae6;
+          font-weight: 600;
+        }
+
+        .euiDataGrid__cell {
+          font-size: 13px;
+          line-height: 1.4;
+
+          &.has-error {
+            background-color: #fef7f7;
+            border-left: 4px solid #bd271e;
+            position: relative;
+
+            &::after {
+              content: '⚠';
+              position: absolute;
+              right: 8px;
+              top: 50%;
+              transform: translateY(-50%);
+              color: #bd271e;
+              font-size: 12px;
+            }
+          }
+
+          &.has-warning {
+            background-color: #fffbf0;
+            border-left: 4px solid #f5a623;
+          }
+
+          &:hover {
+            background-color: #f8f9fa;
+          }
+        }
+
+        // Virtualization enhancements for large datasets
+        .euiDataGrid__virtualized {
+          .euiDataGrid__cell {
+            transition: background-color 0.2s ease;
+          }
+        }
+      }
+
+      .table-controls {
+        padding: 12px 16px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #d3dae6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .record-count {
+          font-size: 14px;
+          color: #69707d;
+          font-weight: 500;
+        }
+
+        .table-actions {
+          display: flex;
+          gap: 8px;
+        }
+      }
+    }
+  }
+
+
+  // Mapping Errors Section
+  .mapping-errors-section {
+    .error-panel {
+      border-left: 6px solid #bd271e;
+      background: linear-gradient(135deg, #fef7f7 0%, #ffffff 100%);
+      padding: 20px;
+      border-radius: 0 8px 8px 0;
+
+      .error-list {
+        .error-item {
+          padding: 12px 16px;
+          margin-bottom: 8px;
+          background-color: #ffffff;
+          border: 1px solid #f4d7da;
+          border-radius: 6px;
+          border-left: 4px solid #bd271e;
+
+          .error-field {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            background-color: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            font-weight: 600;
+          }
+
+          .error-message {
+            color: #bd271e;
+            font-weight: 500;
+            margin-top: 4px;
+          }
+        }
+      }
+    }
+
+    .warning-panel {
+      border-left: 6px solid #f5a623;
+      background: linear-gradient(135deg, #fffbf0 0%, #ffffff 100%);
+
+      .euiCallOut {
+        background-color: transparent;
+        border: none;
+      }
+    }
+  }
+
+  // Action Buttons
+  .action-buttons {
+    .primary-button {
+      height: 48px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #006bb4 0%, #017d73 100%);
+      border: none;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 107, 180, 0.3);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+
+      &:disabled {
+        background: #98a2b3;
+        transform: none;
+        box-shadow: none;
+      }
+    }
+
+    .secondary-button {
+      height: 48px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: 2px solid #006bb4;
+      background: transparent;
+      color: #006bb4;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: #006bb4;
+        color: white;
+        transform: translateY(-1px);
+      }
+    }
+
+    .danger-button {
+      height: 40px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      background: #bd271e;
+      border: none;
+      color: white;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: #a02622;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(189, 39, 30, 0.3);
+      }
+    }
+  }
+
+  // Empty State Enhancements
+  .empty-state {
+    .euiEmptyPrompt {
+      padding: 60px 40px;
+
+      .euiEmptyPrompt__icon {
+        margin-bottom: 32px;
+      }
+
+      .euiEmptyPrompt__title {
+        color: #343741;
+        font-weight: 700;
+        margin-bottom: 16px;
+      }
+
+      .euiEmptyPrompt__body {
+        color: #69707d;
+        font-size: 16px;
+        line-height: 1.6;
+        max-width: 500px;
+        margin: 0 auto 32px;
+      }
+
+      .euiEmptyPrompt__actions {
+        .euiButton {
+          height: 48px;
+          padding: 0 32px;
+          font-size: 16px;
+          font-weight: 600;
+          border-radius: 8px;
+        }
+      }
+    }
+  }
+
+  // Configuration Panels
+  .config-panel {
+    border-radius: 12px;
+    border: 2px solid #d3dae6;
+    background: #ffffff;
+    padding: 24px;
+    position: relative;
+
+    &.active {
+      border-color: #006bb4;
+      box-shadow: 0 4px 12px rgba(0, 107, 180, 0.15);
+    }
+
+    .panel-header {
+      margin-bottom: 20px;
+
+      .panel-title {
+        color: #343741;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .panel-description {
+        color: #69707d;
+        font-size: 14px;
+      }
+    }
+  }
+
+  // Advanced Options
+  .advanced-options {
+    .options-panel {
+      background-color: #f8f9fa;
+      border: 1px solid #d3dae6;
+      border-radius: 8px;
+      padding: 16px;
+
+      .euiFormRow {
+        .euiFormLabel {
+          font-weight: 600;
+          color: #343741;
+        }
+
+        .euiFormHelpText {
+          font-size: 12px;
+          color: #69707d;
+        }
+      }
+    }
+  }
+
+  // Modal Enhancements
+  .euiModal {
+    .euiModal__header {
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      border-bottom: 2px solid #d3dae6;
+    }
+
+    .euiModal__footer {
+      background-color: #f8f9fa;
+      border-top: 1px solid #d3dae6;
+    }
+  }
+
+  // Loading States
+  .loading-overlay {
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.8);
+      z-index: 1;
+      backdrop-filter: blur(2px);
+    }
+
+    .euiLoadingSpinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 992px) {
+    .euiFlexGroup--responsive {
+      flex-direction: column;
+
+      .euiFlexItem {
+        margin-bottom: 16px;
+      }
+    }
+
+    .preview-container {
+      .preview-table {
+        overflow-x: auto;
+      }
+    }
+
+    .file-picker-enhanced {
+      .euiFilePicker__input {
+        min-height: 120px;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .config-panel {
+      padding: 16px;
+    }
+
+    .action-buttons {
+
+      .primary-button,
+      .secondary-button {
+        height: 44px;
+        font-size: 14px;
+      }
+    }
+
+    .euiStepsHorizontal {
+      flex-direction: column;
+
+      .euiStepHorizontal {
+        margin-bottom: 8px;
+      }
+    }
+  }
+}
+
+// Dark Theme Support
+.theme-dark {
+  .redesigned-data-importer {
+
+    .index-stats-panel,
+    .config-panel {
+      background: #25262e;
+      border-color: #3d3e47;
+    }
+
+    .file-picker-enhanced {
+      .euiFilePicker__input {
+        background: #1d1e24;
+        border-color: #3d3e47;
+        color: #dfe5ef;
+
+        &:hover {
+          background: #25262e;
+          border-color: #0079a5;
+        }
+      }
+    }
+
+    .preview-container {
+      .preview-table {
+        border-color: #3d3e47;
+
+        .euiDataGrid__header {
+          background: #25262e;
+          border-color: #3d3e47;
+        }
+
+        .euiDataGrid__cell {
+          &:hover {
+            background-color: #25262e;
+          }
+        }
+      }
+    }
+
+    .mapping-errors-section {
+      .error-panel {
+        background: linear-gradient(135deg, #2a1f1f 0%, #25262e 100%);
+      }
+    }
+
+    .import-summary-panel {
+      background: linear-gradient(135deg, #1a2e2e 0%, #25262e 100%);
+      border-color: #017d73;
+    }
+  }
+}

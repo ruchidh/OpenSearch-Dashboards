@@ -55,7 +55,7 @@ const DatasetSelect: React.FC<DatasetSelectProps> = ({ onSelect, supportedTypes,
   const [datasets, setDatasets] = useState<DetailedDataset[]>([]);
   const [selectedDataset, setSelectedDataset] = useState<DetailedDataset | undefined>();
   const [defaultDatasetId, setDefaultDatasetId] = useState<string | undefined>();
-  const { data, overlays } = services;
+  const { data, overlays, application } = services;
   const {
     dataViews,
     query: { queryString },
@@ -140,6 +140,13 @@ const DatasetSelect: React.FC<DatasetSelectProps> = ({ onSelect, supportedTypes,
 
   const togglePopover = useCallback(() => setIsOpen(!isOpen), [isOpen]);
   const closePopover = useCallback(() => setIsOpen(false), []);
+
+  const handleImportData = useCallback(() => {
+    setIsOpen(false);
+    if (application) {
+      application.navigateToApp('dataImporter');
+    }
+  }, [application]);
 
   const options = useMemo(() => {
     return datasets
@@ -285,7 +292,7 @@ const DatasetSelect: React.FC<DatasetSelectProps> = ({ onSelect, supportedTypes,
           justifyContent="spaceBetween"
           alignItems="center"
           responsive={false}
-          gutterSize="none"
+          gutterSize="s"
           className="datasetSelect__footer"
         >
           <EuiFlexItem grow={false} className="datasetSelect__footerItem">
@@ -338,6 +345,22 @@ const DatasetSelect: React.FC<DatasetSelectProps> = ({ onSelect, supportedTypes,
               <FormattedMessage
                 id="data.datasetSelect.advancedButton"
                 defaultMessage="View all available data"
+              />
+            </EuiButton>
+          </EuiFlexItem>
+          <EuiFlexItem grow={false} className="datasetSelect__footerItem">
+            <EuiButton
+              className="datasetSelect__importButton"
+              data-test-subj="datasetSelectImportButton"
+              iconType="importAction"
+              iconSide="right"
+              size="s"
+              color="primary"
+              onClick={handleImportData}
+            >
+              <FormattedMessage
+                id="data.datasetSelect.importButton"
+                defaultMessage="Import Data"
               />
             </EuiButton>
           </EuiFlexItem>

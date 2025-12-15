@@ -1,0 +1,8 @@
+{"timestamp": "2025-10-01T10:15:23Z", "level": "INFO", "service": "user-service", "message": "User login successful", "user_id": 12345, "ip": "192.168.1.100"}
+{"timestamp": "2025-10-01T10:16:45Z", "level": "ERROR", "service": "database", "message": "Connection timeout", "host": "db.example.com", "timeout": "30s"}
+{"timestamp": "2025-10-01T10:17:12Z", "level": "WARN", "service": "cache-service", "message": "Cache miss for key", "key": "user_profile_12345"}
+{"timestamp": "2025-10-01T10:18:30Z", "level": "INFO", "service": "auth-service", "message": "Token refresh", "user_id": 12345, "expires_at": "2025-10-01T11:18:30Z"}
+{"timestamp": "2025-10-01T10:19:05Z", "level": "DEBUG", "service": "api-gateway", "message": "Request processed", "endpoint": "/api/users/12345", "method": "GET", "duration": "150ms"}
+{"timestamp": "2025-10-01T10:20:15Z", "level": "ERROR", "service": "payment-service", "message": "Payment failed", "transaction_id": "txn_abc123", "error": "insufficient_funds"}
+{"timestamp": "2025-10-01T10:21:33Z", "level": "INFO", "service": "notification-service", "message": "Email sent", "recipient": "user@example.com", "template": "welcome"}
+{"timestamp": "2025-10-01T10:22:47Z", "level": "WARN", "service": "security-service", "message": "Suspicious activity detected", "ip": "192.168.1.200", "attempts": 5}

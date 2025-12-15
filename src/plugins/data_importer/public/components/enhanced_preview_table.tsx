@@ -187,7 +187,7 @@ export const EnhancedPreviewComponent = ({
           toolbarVisibility={{
             showColumnSelector: true,
             showSortSelector: true,
-            showFullScreenSelector: true,
+            showFullScreenSelector: false,
           }}
           leadingControlColumns={[]}
           trailingControlColumns={[]}

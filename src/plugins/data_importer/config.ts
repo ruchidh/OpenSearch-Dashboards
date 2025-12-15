@@ -4,12 +4,28 @@
  */
 
 import { schema, TypeOf } from '@osd/config-schema';
-import { CSV_FILE_TYPE, JSON_FILE_TYPE, NDJSON_FILE_TYPE } from './common/constants';
+import {
+  CSV_FILE_TYPE,
+  JSON_FILE_TYPE,
+  NDJSON_FILE_TYPE,
+  TXT_FILE_TYPE,
+  YAML_FILE_TYPE,
+  XML_FILE_TYPE,
+  TSV_FILE_TYPE,
+} from './common/constants';
 
 export const configSchema = schema.object({
   enabled: schema.boolean({ defaultValue: false }),
   enabledFileTypes: schema.arrayOf(schema.string(), {
-    defaultValue: [CSV_FILE_TYPE, JSON_FILE_TYPE, NDJSON_FILE_TYPE],
+    defaultValue: [
+      CSV_FILE_TYPE,
+      JSON_FILE_TYPE,
+      NDJSON_FILE_TYPE,
+      TXT_FILE_TYPE,
+      YAML_FILE_TYPE,
+      XML_FILE_TYPE,
+      TSV_FILE_TYPE,
+    ],
   }),
   maxFileSizeBytes: schema.number({
     defaultValue: 100000000,
@@ -20,8 +36,20 @@ export const configSchema = schema.object({
     min: 1,
   }),
   filePreviewDocumentsCount: schema.number({
-    defaultValue: 10,
+    defaultValue: 10000,
     min: 1,
+  }),
+  useRedesignedUI: schema.boolean({ defaultValue: true }),
+  enableEnhancedProcessing: schema.boolean({ defaultValue: true }),
+  maxRecordsLimit: schema.number({
+    defaultValue: 100000,
+    min: 1000,
+    max: 1000000,
+  }),
+  defaultChunkSize: schema.number({
+    defaultValue: 1000,
+    min: 100,
+    max: 10000,
   }),
 });
 

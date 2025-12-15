@@ -346,7 +346,7 @@ export const DataImporterPluginApp = ({
               }}
               onManageDataSource={() => {}}
             />
-            <EuiSpacer size="m" />
+            <EuiSpacer size="s" />
           </>
         )}
       </div>

@@ -1,0 +1,20 @@
+2025-10-01 10:15:23 INFO [user-service] User login successful: user_id=12345, ip=192.168.1.100
+2025-10-01 10:16:45 ERROR [database] Connection timeout: host=db.example.com, timeout=30s
+2025-10-01 10:17:12 WARN [cache-service] Cache miss for key: user_profile_12345
+2025-10-01 10:18:30 INFO [auth-service] Token refresh: user_id=12345, expires_at=2025-10-01T11:18:30Z
+2025-10-01 10:19:05 DEBUG [api-gateway] Request processed: endpoint=/api/users/12345, method=GET, duration=150ms
+2025-10-01 10:20:15 ERROR [payment-service] Payment failed: transaction_id=txn_abc123, error=insufficient_funds
+2025-10-01 10:21:33 INFO [notification-service] Email sent: recipient=user@example.com, template=welcome
+2025-10-01 10:22:47 WARN [security-service] Suspicious activity detected: ip=192.168.1.200, attempts=5
+2025-10-01 10:23:10 INFO [order-service] Order created: order_id=ord_789, user_id=12345, amount=$99.99
+2025-10-01 10:24:28 ERROR [external-api] Third party service unavailable: service=payment_processor, status=503
+2025-10-01 10:25:42 DEBUG [data-processor] Batch job completed: records_processed=1500, duration=45s
+2025-10-01 10:26:55 INFO [user-service] Password changed: user_id=12345, strength=strong
+2025-10-01 10:27:18 WARN [rate-limiter] Rate limit approached: ip=192.168.1.100, requests=95/100
+2025-10-01 10:28:33 INFO [backup-service] Database backup completed: size=2.5GB, duration=300s
+2025-10-01 10:29:45 ERROR [file-service] Upload failed: file_id=file_456, error=size_exceeded, max_size=10MB
+2025-10-01 10:30:12 INFO [monitoring] Health check passed: all_services=healthy, response_time=<50ms
+2025-10-01 10:31:27 DEBUG [scheduler] Cron job executed: job=cleanup_temp_files, files_deleted=247
+2025-10-01 10:32:40 WARN [memory-monitor] High memory usage: current=85%, threshold=80%
+2025-10-01 10:33:55 INFO [session-service] Session expired: session_id=sess_xyz789, user_id=12345
+2025-10-01 10:34:18 ERROR [messaging-queue] Message processing failed: queue=orders, message_id=msg_123, retry_count=3

@@ -1,0 +1,26 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+.import-text-content {
+  .file-format-label {
+    justify-content: center;
+  }
+
+  .editor-info-popover {
+    max-width: 300px;
+  }
+
+  .code-editor-container {
+    height: 150px;
+    border: 1px solid #D3DAE6;
+    border-radius: 6px;
+
+    .euiCodeEditorWrapper {
+      width: 100%;
+      height: inherit;
+      overflow: auto;
+    }
+  }
+}

@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import uuid from 'uuid';
 import {
   EuiPageContent,
   EuiTitle,
@@ -16,11 +17,10 @@ import {
   EuiSpacer,
   EuiButton,
   EuiLoadingSpinner,
-  EuiCallOut,
-  EuiTextArea,
   EuiButtonIcon,
   EuiPopover,
   EuiText,
+  EuiCodeEditor,
 } from '@elastic/eui';
 import { EnhancedPreviewComponent } from '../enhanced_preview_table';
 import { PreviewResponse } from '../../types';
@@ -34,11 +34,6 @@ interface DataConfigureStepProps {
   availableTimeFields: string[];
   filePreviewData: PreviewResponse;
   isLoadingPreview: boolean;
-  importErrors: Array<{
-    error: string;
-    line?: number;
-    message: string;
-  }>;
   isImporting: boolean;
   groqInput?: string;
   delimiter?: string;
@@ -66,7 +61,6 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
   availableTimeFields,
   filePreviewData,
   isLoadingPreview,
-  importErrors,
   isImporting,
   groqInput,
   delimiter,
@@ -87,19 +81,18 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
     <EuiPageContent paddingSize="s">
       <div className="wizard-step-container">
         {renderStepProgress()}
-
-        <EuiTitle size="xs">
-          <h3>Step 2: Configure & Preview Data</h3>
-        </EuiTitle>
+        <EuiSpacer size="m" />
 
         <EuiFlexGroup>
           {/* Left Panel - Configuration Sections */}
           <EuiFlexItem grow={1} style={{ maxWidth: '400px' }}>
             {/* Combined Data Configuration and Formatting Panel */}
-            <EuiPanel style={{ height: '70vh', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ flex: '1 1 auto', overflow: 'auto', paddingRight: '8px', minHeight: 0 }}>
+            <EuiPanel style={{ display: 'flex', flexDirection: 'column' }}>
+              <div
+                style={{ flex: '1 1 auto', overflow: 'auto', paddingRight: '8px', minHeight: 0 }}
+              >
                 <EuiTitle size="s">
-                  <h3>Data Configuration</h3>
+                  <h3>Import data to</h3>
                 </EuiTitle>
                 <EuiSpacer size="m" />
 
@@ -117,20 +110,6 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
                   <EuiFieldText value={indexName} readOnly />
                 </EuiFormRow>
 
-                <EuiFormRow
-                  label="Time field (optional)"
-                  helpText="Select a time field for time-based filtering in Discover and Visualizations"
-                >
-                  <EuiComboBox
-                    placeholder="Select time field (optional)..."
-                    singleSelection={{ asPlainText: true }}
-                    options={availableTimeFields.map((field) => ({ label: field }))}
-                    selectedOptions={timeField ? [{ label: timeField }] : []}
-                    onChange={onTimeFieldChange}
-                    isClearable={true}
-                  />
-                </EuiFormRow>
-
                 <EuiSpacer size="l" />
 
                 {/* Additional Settings Section */}
@@ -138,6 +117,20 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
                   <h4>Additional settings</h4>
                 </EuiTitle>
                 <EuiSpacer size="m" />
+
+                <EuiFormRow
+                  label="Time field - optional"
+                  helpText="Select a time field for time-based filtering in Discover and Visualizations"
+                >
+                  <EuiComboBox
+                    placeholder="@timestamp"
+                    singleSelection={{ asPlainText: true }}
+                    options={availableTimeFields.map((field) => ({ label: field }))}
+                    selectedOptions={timeField ? [{ label: timeField }] : []}
+                    onChange={onTimeFieldChange}
+                    isClearable={true}
+                  />
+                </EuiFormRow>
 
                 {/* GROQ Input */}
                 <EuiFormRow
@@ -213,55 +206,54 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
                     </EuiFlexGroup>
                   }
                 >
-                  <EuiTextArea
-                    value={groqInput || ''}
-                    onChange={(e) => onGroqInputChange(e.target.value)}
-                    placeholder="Optional: Enter GROQ queries to filter or transform your data"
-                    resize="vertical"
+                  <div
                     style={{
-                      minHeight: '100px',
+                      height: '120px',
+                      border: '1px solid #D3DAE6',
+                      borderRadius: '6px',
                     }}
-                  />
+                  >
+                    <EuiCodeEditor
+                      id={uuid.v4()}
+                      onChange={onGroqInputChange}
+                      width={'100%'}
+                      height="120px"
+                      value={groqInput || '{}'}
+                      mode="json"
+                    />
+                  </div>
                 </EuiFormRow>
               </div>
 
               {/* Action Buttons - Pinned to bottom */}
-              <div style={{ flex: '0 0 auto', borderTop: '1px solid #D3DAE6', padding: '16px 0' }}>
-                {/* Back and Clear buttons row */}
+              <div>
+                {/* Update preview and Back buttons row */}
                 <EuiFlexGroup justifyContent="spaceBetween" gutterSize="s">
                   <EuiFlexItem grow={false}>
-                    <EuiButton
-                      iconType="arrowLeft"
-                      size="s"
-                      onClick={onBackToUpload}
-                    >
-                      Back
+                    <EuiButton iconType="refresh" size="s" onClick={onClear}>
+                      Update preview
                     </EuiButton>
                   </EuiFlexItem>
                   <EuiFlexItem grow={false}>
-                    <EuiButton
-                      color="danger"
-                      size="s"
-                      onClick={onClear}
-                    >
-                      Clear
+                    <EuiButton iconType="arrowLeft" size="s" onClick={onBackToUpload}>
+                      Back
                     </EuiButton>
                   </EuiFlexItem>
                 </EuiFlexGroup>
 
-                <EuiSpacer size="m" />
+                <EuiSpacer size="s" />
 
-                {/* Full width Import button */}
+                {/* Import button row - full width */}
                 <EuiButton
                   fill
-                  color="success"
-                  size="m"
+                  color="primary"
+                  size="s"
                   fullWidth={true}
                   onClick={onImport}
                   isLoading={isImporting}
-                  isDisabled={true}
+                  isDisabled={!canProceedToStep3}
                 >
-                  Import (Resolve conflicts first)
+                  Import
                 </EuiButton>
               </div>
             </EuiPanel>
@@ -270,10 +262,19 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
           {/* Right Panel - Preview and Errors */}
           <EuiFlexItem grow={2}>
             {/* Preview Panel */}
-            <EuiPanel style={{ marginBottom: '16px' }}>
-              <EuiTitle size="s">
-                <h3>Preview</h3>
-              </EuiTitle>
+            <EuiPanel>
+              <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
+                <EuiFlexItem grow={false}>
+                  <EuiTitle size="s">
+                    <h3>Preview</h3>
+                  </EuiTitle>
+                </EuiFlexItem>
+                <EuiFlexItem grow={false}>
+                  <EuiButton iconType="refresh" size="s" onClick={onClear}>
+                    Update preview
+                  </EuiButton>
+                </EuiFlexItem>
+              </EuiFlexGroup>
               <EuiSpacer size="m" />
 
               <div style={{ minHeight: '300px' }}>
@@ -290,62 +291,6 @@ export const DataConfigureStep: React.FC<DataConfigureStepProps> = ({
                 )}
               </div>
             </EuiPanel>
-
-            {/* Errors Panel - Show dummy errors for demo */}
-            {(importErrors.length > 0 || true) && (
-              <EuiPanel style={{ maxHeight: '40vh', overflow: 'auto' }}>
-                <EuiTitle size="s">
-                  <h3>Mapping Conflicts & Errors</h3>
-                </EuiTitle>
-                <EuiSpacer size="m" />
-
-                <div>
-                  {/* Real errors if they exist */}
-                  {importErrors.map((error, index) => (
-                    <EuiCallOut key={index} title={error.error} color="danger" iconType="alert">
-                      <p>{error.message}</p>
-                    </EuiCallOut>
-                  ))}
-
-                  {/* DEMO: Dummy mapping conflict errors */}
-                  <EuiCallOut
-                    title="Field Type Conflict: amount"
-                    color="danger"
-                    iconType="alert"
-                    style={{ marginBottom: '8px' }}
-                  >
-                    <p>
-                      <strong>Conflict:</strong> Mixed types - number, string, boolean<br/>
-                      <strong>Affected:</strong> 3 of 4 documents<br/>
-                      <strong>Fix:</strong> Standardize to numeric format
-                    </p>
-                  </EuiCallOut>
-
-                  <EuiCallOut
-                    title="Field Type Conflict: user_id"
-                    color="danger"
-                    iconType="alert"
-                    style={{ marginBottom: '8px' }}
-                  >
-                    <p>
-                      <strong>Conflict:</strong> Expected integer, found string/float/object<br/>
-                      <strong>Fix:</strong> Use consistent ID format
-                    </p>
-                  </EuiCallOut>
-
-                  <EuiCallOut
-                    title="Invalid Date: timestamp"
-                    color="warning"
-                    iconType="alert"
-                  >
-                    <p>
-                      <strong>Issue:</strong> Some values not valid dates<br/>
-                      <strong>Fix:</strong> Use ISO format (2024-01-15T10:30:00Z)
-                    </p>
-                  </EuiCallOut>
-                </div>
-              </EuiPanel>
-            )}
           </EuiFlexItem>
         </EuiFlexGroup>
       </div>

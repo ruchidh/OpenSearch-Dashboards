@@ -20,6 +20,7 @@ import {
 import uuid from 'uuid';
 import { i18n } from '@osd/i18n';
 import { JSON_FILE_TYPE } from '../../common/constants';
+import './import_text_content.scss';
 
 export interface ImportTextContentBodyProps {
   onTextChange: (text: string) => void;
@@ -70,11 +71,11 @@ export const ImportTextContentBody = ({
   };
 
   return (
-    <EuiPageContentBody>
+    <EuiPageContentBody className="import-text-content">
       <EuiFlexGroup direction="column">
         <EuiFlexItem>
           <EuiFlexGroup justifyContent="flexStart" gutterSize="s" alignItems="center">
-            <EuiFlexItem grow={false} style={{ justifyContent: 'center' }}>
+            <EuiFlexItem grow={false} className="file-format-label">
               <EuiText>File Format: </EuiText>
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
@@ -101,7 +102,7 @@ export const ImportTextContentBody = ({
                   panelPaddingSize="m"
                   anchorPosition="downLeft"
                 >
-                  <div style={{ maxWidth: '300px' }}>
+                  <div className="editor-info-popover">
                     <EuiTitle size="xs">
                       <h4>Text Editor Information</h4>
                     </EuiTitle>
@@ -135,16 +136,22 @@ export const ImportTextContentBody = ({
                 </EuiPopover>
               </EuiFlexItem>
             )}
+
+            <EuiFlexItem>
+              <EuiText
+                textAlign="right"
+                color={numCharacters > characterLimit ? 'danger' : 'default'}
+              >
+                {numCharacters}/{characterLimit}{' '}
+                {i18n.translate('dataImporter.file.characters', {
+                  defaultMessage: 'characters',
+                })}
+              </EuiText>
+            </EuiFlexItem>
           </EuiFlexGroup>
         </EuiFlexItem>
         <EuiFlexItem grow={1}>
-          <div
-            style={{
-              height: '100px',
-              border: '1px solid #D3DAE6',
-              borderRadius: '6px',
-            }}
-          >
+          <div className="code-editor-container">
             <EuiCodeEditor
               id={uuid.v4()}
               onChange={onTextUpdate}
@@ -153,14 +160,6 @@ export const ImportTextContentBody = ({
               mode={fileType}
             />
           </div>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiText color={numCharacters > characterLimit ? 'danger' : 'default'}>
-            {numCharacters}/{characterLimit}{' '}
-            {i18n.translate('dataImporter.file.characters', {
-              defaultMessage: 'characters',
-            })}
-          </EuiText>
         </EuiFlexItem>
       </EuiFlexGroup>
     </EuiPageContentBody>

@@ -16,7 +16,7 @@ import {
   EuiCallOut,
 } from '@elastic/eui';
 import { ApplicationStart, CoreStart } from 'opensearch-dashboards/public';
-import { getWorkspaceIdFromUrl, formatUrlWithWorkspaceId } from '../../../../../core/public/utils';
+import { getWorkspaceIdFromUrl } from '../../../../../core/public/utils';
 import { EnhancedPreviewComponent } from '../enhanced_preview_table';
 import { PreviewResponse } from '../../types';
 
@@ -62,7 +62,9 @@ export const DataImportCompleteStep: React.FC<DataImportCompleteStepProps> = ({
 
     if (currentWorkspaceId) {
       // If in workspace, navigate to explore/logs within that workspace
-      const targetUrl = `${window.location.origin}${http.basePath.get()}/w/${currentWorkspaceId}/app/explore/logs#/`;
+      const targetUrl = `${
+        window.location.origin
+      }${http.basePath.get()}/w/${currentWorkspaceId}/app/explore/logs#/`;
       window.location.href = targetUrl;
     } else {
       // If outside workspace (like from Data Administration), navigate to standard Discover
@@ -75,11 +77,7 @@ export const DataImportCompleteStep: React.FC<DataImportCompleteStepProps> = ({
       <div className="wizard-step-container">
         {renderStepProgress()}
 
-        <EuiTitle size="xs">
-          <h3>Step 3: Import Complete</h3>
-        </EuiTitle>
-
-        <EuiSpacer size="s" />
+        <EuiSpacer size="m" />
 
         <EuiFlexGroup>
           {/* Left Panel - Import Details */}
@@ -123,11 +121,7 @@ export const DataImportCompleteStep: React.FC<DataImportCompleteStepProps> = ({
                   </EuiButton>
                 </EuiFlexItem>
                 <EuiFlexItem>
-                  <EuiButton
-                    fill
-                    size="s"
-                    onClick={redirectToExplore}
-                  >
+                  <EuiButton fill size="s" onClick={redirectToExplore}>
                     Explore in Discover
                   </EuiButton>
                 </EuiFlexItem>
@@ -138,7 +132,7 @@ export const DataImportCompleteStep: React.FC<DataImportCompleteStepProps> = ({
           {/* Right Panel - Preview and Errors */}
           <EuiFlexItem grow={2}>
             {/* Preview Panel */}
-            <EuiPanel style={{ marginBottom: '16px' }}>
+            <EuiPanel>
               <EuiTitle size="s">
                 <h3>Preview</h3>
               </EuiTitle>

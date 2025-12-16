@@ -3,11 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   EuiPageContent,
   EuiTitle,
-  EuiText,
   EuiSpacer,
   EuiFlexGroup,
   EuiFlexItem,
@@ -34,6 +33,7 @@ interface DataUploadStepProps {
   indexOptions: Array<{ label: string }>;
   delimiter: string;
   showDelimiterChoice: boolean;
+  isLoadingPreview: boolean;
 
   // Callbacks
   onIndexNameChange: (selected: Array<{ label: string }>) => void;
@@ -61,6 +61,7 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
   indexOptions,
   delimiter,
   showDelimiterChoice,
+  isLoadingPreview,
   onIndexNameChange,
   onCreateIndexName,
   onFileChange,
@@ -74,6 +75,15 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
 }) => {
   const [isTextEditorInfoOpen, setIsTextEditorInfoOpen] = useState<boolean>(false);
   const [uploadMethod, setUploadMethod] = useState<'file' | 'manual'>('file');
+
+  // Auto-update upload method based on content
+  useEffect(() => {
+    if (inputFile) {
+      setUploadMethod('file');
+    } else if (textInput.trim()) {
+      setUploadMethod('manual');
+    }
+  }, [inputFile, textInput]);
 
   const uploadMethodOptions = [
     {
@@ -117,6 +127,7 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
             border: '2px dashed #D3DAE6',
             display: 'flex',
             flexDirection: 'column',
+            height: '250px',
           }}
         >
           {uploadMethod === 'file' ? (
@@ -158,7 +169,7 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
           )}
         </EuiPanel>
 
-        <EuiSpacer size="l" />
+        <EuiSpacer size="m" />
 
         {/* Delimiter Selection - Show only for CSV files */}
         {showDelimiterChoice && (
@@ -172,13 +183,13 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
         <EuiTitle size="s">
           <h3>Configure destination</h3>
         </EuiTitle>
-        <EuiSpacer size="m" />
+        <EuiSpacer size="s" />
 
         {/* Data Source Selection */}
         <EuiFormRow label="Data source" fullWidth>
           <div>{renderDataSourceComponent}</div>
         </EuiFormRow>
-        <EuiSpacer size="m" />
+        <EuiSpacer size="s" />
 
         {/* Index Selection */}
         <EuiFormRow label="Select an existing index or create new" fullWidth>
@@ -193,7 +204,7 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
           />
         </EuiFormRow>
 
-        <EuiSpacer size="l" />
+        <EuiSpacer size="s" />
 
         {/* Next Button */}
         <EuiFlexGroup justifyContent="flexEnd">
@@ -201,9 +212,10 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
             <EuiButton
               fill
               size="m"
-              iconType="arrowRight"
+              iconType={isLoadingPreview ? undefined : 'arrowRight'}
               iconSide="right"
-              isDisabled={!canProceedToStep2}
+              isDisabled={!canProceedToStep2 || isLoadingPreview}
+              isLoading={isLoadingPreview}
               onClick={onPreviewClick}
             >
               Next

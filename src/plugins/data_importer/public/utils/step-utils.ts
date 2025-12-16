@@ -16,12 +16,12 @@ export const createStepConfiguration = (currentStep: 1 | 2 | 3): StepConfigurati
     isActive: currentStep === 1,
   },
   {
-    title: 'Configure & Preview',
+    title: 'Settings and preview',
     isComplete: currentStep > 2,
     isActive: currentStep === 2,
   },
   {
-    title: 'Import Complete',
+    title: 'Complete',
     isComplete: currentStep === 3,
     isActive: currentStep === 3,
   },

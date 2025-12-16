@@ -52,7 +52,7 @@ const determineType = (
       // TODO Dates need further parsing since OpenSearch expects a certain timestamp format
       return defaultType;
     case Array.isArray(value) && value.length > 0:
-      return determineType(value[0], currentNestedCount, nestedObjectsLimit);
+      return determineTypeForArray(value, currentNestedCount, nestedObjectsLimit);
     case value && typeof value === 'object' && !Array.isArray(value):
       const properties: Record<string, MappingProperty> = {};
       Object.keys(value).forEach((key) => {
@@ -62,6 +62,70 @@ const determineType = (
     default:
       return defaultType;
   }
+};
+
+const determineTypeForArray = (
+  array: any[],
+  currentNestedCount: number,
+  nestedObjectsLimit: number
+): MappingProperty => {
+  if (array.length === 0) {
+    return { type: DYNAMIC_MAPPING_TYPES.NULL };
+  }
+
+  // Sample multiple elements to get a better type determination
+  const sampleSize = Math.min(array.length, 10); // Sample up to 10 elements
+  const sampledElements = [];
+
+  for (let i = 0; i < sampleSize; i++) {
+    const index = Math.floor((i * array.length) / sampleSize);
+    sampledElements.push(array[index]);
+  }
+
+  // Determine types of sampled elements
+  const elementTypes = sampledElements.map(element =>
+    determineType(element, currentNestedCount, nestedObjectsLimit)
+  );
+
+  // If all elements have the same type, use that type
+  const firstType = elementTypes[0];
+  const allSameType = elementTypes.every(type =>
+    JSON.stringify(type) === JSON.stringify(firstType)
+  );
+
+  if (allSameType) {
+    return firstType;
+  }
+
+  // If mixed types but all are objects, try to merge properties
+  const allObjects = elementTypes.every(type => type.properties);
+  if (allObjects) {
+    const mergedProperties: Record<string, MappingProperty> = {};
+
+    elementTypes.forEach(type => {
+      const typeWithProperties = type as { properties?: Record<string, MappingProperty> };
+      if (typeWithProperties.properties && typeof typeWithProperties.properties === 'object') {
+        Object.keys(typeWithProperties.properties).forEach(key => {
+          if (!mergedProperties[key] && typeWithProperties.properties) {
+            mergedProperties[key] = typeWithProperties.properties[key];
+          }
+        });
+      }
+    });
+
+    return { properties: mergedProperties };
+  }
+
+  // For mixed primitive types, default to text with keyword mapping
+  return {
+    type: DYNAMIC_MAPPING_TYPES.TEXT,
+    fields: {
+      keyword: {
+        type: 'keyword',
+        ignore_above: 256,
+      },
+    },
+  };
 };
 
 const determineExactNumberType = (value: number) => {

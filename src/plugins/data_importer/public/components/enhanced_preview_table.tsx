@@ -94,6 +94,55 @@ export const EnhancedPreviewComponent = ({
     [predictedMapping, existingMapping]
   );
 
+  // Helper function to format cell values properly
+  const formatCellValue = useCallback((value: any): string => {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+
+    if (Array.isArray(value)) {
+      // For arrays, show a compact representation
+      if (value.length === 0) {
+        return '[]';
+      }
+
+      // If array contains only primitives, show them inline
+      const allPrimitives = value.every(item =>
+        item === null || item === undefined ||
+        typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
+      );
+
+      if (allPrimitives && value.length <= 3) {
+        return `[${value.map(item => item === null ? 'null' : String(item)).join(', ')}]`;
+      }
+
+      // For complex arrays or long arrays, show count
+      return `Array(${value.length})`;
+    }
+
+    if (typeof value === 'object') {
+      // For objects, try to show a compact JSON representation if small
+      try {
+        const jsonStr = JSON.stringify(value);
+        if (jsonStr.length <= 50) {
+          return jsonStr;
+        }
+
+        // For larger objects, show key count
+        const keyCount = Object.keys(value).length;
+        return `{${keyCount} ${keyCount === 1 ? 'property' : 'properties'}}`;
+      } catch {
+        return '[Complex Object]';
+      }
+    }
+
+    return String(value);
+  }, []);
+
   // Render cell content with error indicators
   const renderCellValue = useCallback(
     ({ rowIndex, columnId }: { rowIndex: number; columnId: string }) => {
@@ -106,12 +155,13 @@ export const EnhancedPreviewComponent = ({
 
       const value = row[columnId];
       const hasError = hasFieldError(columnId);
+      const formattedValue = formatCellValue(value);
 
       if (hasError) {
         return (
           <EuiFlexGroup alignItems="center" gutterSize="xs" responsive={false}>
             <EuiFlexItem grow={false}>
-              <span style={{ color: '#BD271E' }}>{String(value)}</span>
+              <span style={{ color: '#BD271E' }}>{formattedValue}</span>
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
               <EuiToolTip
@@ -125,9 +175,22 @@ export const EnhancedPreviewComponent = ({
         );
       }
 
-      return String(value);
+      // Add tooltip for complex values to show full content
+      if (typeof value === 'object' && value !== null) {
+        const fullContent = JSON.stringify(value, null, 2);
+        return (
+          <EuiToolTip
+            position="top"
+            content={<pre style={{ maxHeight: '200px', overflow: 'auto' }}>{fullContent}</pre>}
+          >
+            <span>{formattedValue}</span>
+          </EuiToolTip>
+        );
+      }
+
+      return formattedValue;
     },
-    [filteredData, hasFieldError, predictedMapping, existingMapping]
+    [filteredData, hasFieldError, predictedMapping, existingMapping, formatCellValue]
   );
 
   if (totalRows === 0) {

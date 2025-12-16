@@ -4,30 +4,100 @@
  */
 
 import { Readable } from 'stream';
+import * as yaml from 'js-yaml';
 import { IFileProcessor, IngestOptions, ParseOptions, ValidationOptions } from '../types';
 import { isValidObject } from '../utils/util';
 
 export class YAMLProcessor implements IFileProcessor {
 
   /**
-   * Recursively flattens arrays and nested arrays into individual documents
+   * Recursively flattens arrays and nested arrays into individual documents,
+   * while properly handling nested objects and arrays within those objects.
+   * Enhanced to handle complex YAML structures with nested arrays.
    */
   private flattenToDocuments(data: any): Array<Record<string, any>> {
     const documents: Array<Record<string, any>> = [];
 
-    const processItem = (item: any) => {
+    const processItem = (item: any, parentKey?: string) => {
       if (Array.isArray(item)) {
         // If it's an array, recursively process each item
-        item.forEach(processItem);
+        item.forEach(arrayItem => processItem(arrayItem, parentKey));
       } else if (item && typeof item === 'object' && isValidObject(item)) {
-        // If it's a valid object, add it as a document
-        documents.push(item);
+        // Check if this object contains arrays that should be flattened
+        const arrayKeys = Object.keys(item).filter(key => Array.isArray(item[key]));
+
+        if (arrayKeys.length > 0) {
+          // If object has arrays, check if they contain meaningful documents
+          let hasExtractedFromArrays = false;
+
+          for (const arrayKey of arrayKeys) {
+            const arrayValue = item[arrayKey];
+            if (arrayValue.length > 0 && arrayValue.every((arrItem: any) =>
+              arrItem && typeof arrItem === 'object' && isValidObject(arrItem))) {
+              // This array contains valid objects, extract them as separate documents
+              arrayValue.forEach((arrItem: any) => {
+                const processedItem = this.processNestedObject(arrItem);
+                // Optionally add context about which array this came from
+                if (arrayKey && arrayKey !== 'items' && arrayKey !== 'data') {
+                  processedItem._source_array = arrayKey;
+                }
+                documents.push(processedItem);
+              });
+              hasExtractedFromArrays = true;
+            }
+          }
+
+          // If we didn't extract meaningful documents from arrays, treat the whole object as a document
+          if (!hasExtractedFromArrays) {
+            const processedObject = this.processNestedObject(item);
+            documents.push(processedObject);
+          }
+        } else {
+          // No arrays in this object, process it as a single document
+          const processedObject = this.processNestedObject(item);
+          documents.push(processedObject);
+        }
       }
       // Skip primitive values, null, or invalid objects
     };
 
     processItem(data);
+
+    // If no documents were extracted, fall back to treating the whole input as one document
+    if (documents.length === 0 && data && typeof data === 'object' && isValidObject(data)) {
+      documents.push(this.processNestedObject(data));
+    }
+
     return documents;
+  }
+
+  /**
+   * Processes nested objects to handle arrays and nested structures properly
+   */
+  private processNestedObject(obj: Record<string, any>): Record<string, any> {
+    const processed: Record<string, any> = {};
+
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+
+      if (Array.isArray(value)) {
+        // For arrays, preserve the array structure but ensure all elements are properly processed
+        processed[key] = value.map(item => {
+          if (item && typeof item === 'object' && !Array.isArray(item)) {
+            return this.processNestedObject(item);
+          }
+          return item;
+        });
+      } else if (value && typeof value === 'object') {
+        // For nested objects, recursively process them
+        processed[key] = this.processNestedObject(value);
+      } else {
+        // For primitive values, keep as-is
+        processed[key] = value;
+      }
+    });
+
+    return processed;
   }
 
   public async validateText(text: string, _: ValidationOptions) {
@@ -35,10 +105,22 @@ export class YAMLProcessor implements IFileProcessor {
       return false;
     }
     try {
-      // For now, we'll use a basic YAML validation
-      // In production, you'd want to add a YAML parser library like 'js-yaml'
-      const yamlPattern = /^[\s]*[-\w\s:]+/;
-      return yamlPattern.test(text);
+      // Use js-yaml to properly validate YAML content
+      const parsedData = yaml.load(text) as any;
+
+      // Check if it's a valid single object or can be flattened to valid documents
+      if (parsedData && typeof parsedData === 'object') {
+        if (Array.isArray(parsedData)) {
+          // For arrays, check if we can extract at least one valid document
+          const documents = this.flattenToDocuments(parsedData);
+          return documents.length > 0;
+        } else {
+          // For single objects, use the existing validation
+          return isValidObject(parsedData as Record<string, any>);
+        }
+      }
+
+      return false;
     } catch (e) {
       return false;
     }
@@ -48,9 +130,12 @@ export class YAMLProcessor implements IFileProcessor {
     const { client, indexName } = options;
 
     try {
-      // Parse YAML to JSON (would need js-yaml library)
-      // For now, treating as JSON fallback
-      const document = JSON.parse(text);
+      // Parse YAML content using js-yaml
+      const parsedData = yaml.load(text) as any;
+
+      // Use the improved processing logic for consistent handling
+      const documents = this.flattenToDocuments(parsedData);
+      const document = documents.length > 0 ? documents[0] : parsedData;
 
       const isSuccessful = await new Promise<boolean>(async (resolve) => {
         try {
@@ -90,9 +175,12 @@ export class YAMLProcessor implements IFileProcessor {
         .on('error', (_) => resolve(0))
         .on('end', async () => {
           try {
-            // Parse YAML content (would use js-yaml in production)
-            // For now, fallback to JSON parsing
-            const document = JSON.parse(rawData);
+            // Parse YAML content using js-yaml
+            const parsedData = yaml.load(rawData) as any;
+
+            // Use the improved processing logic for consistent handling
+            const documents = this.flattenToDocuments(parsedData);
+            const document = documents.length > 0 ? documents[0] : parsedData;
 
             if (!isValidObject(document)) {
               resolve(0);
@@ -126,20 +214,10 @@ export class YAMLProcessor implements IFileProcessor {
         .on('error', (e) => reject(e))
         .on('end', async () => {
           try {
-            // Parse YAML content (would use js-yaml library in production)
-            // For demo purposes, falling back to JSON parsing
-            let parsedData;
+            // Parse YAML content using js-yaml
+            const parsedData = yaml.load(rawData) as any;
 
-            try {
-              // Try JSON first
-              parsedData = JSON.parse(rawData);
-            } catch {
-              // If JSON fails, try basic YAML-like structure conversion
-              // This is a simplified approach - real implementation would use js-yaml
-              parsedData = this.simpleYamlToJson(rawData);
-            }
-
-            // Use the flattening logic to handle arrays and nested structures
+            // Use the new flattening logic to handle arrays and nested structures
             const flattenedDocuments = this.flattenToDocuments(parsedData);
 
             if (flattenedDocuments.length === 0) {
@@ -161,37 +239,4 @@ export class YAMLProcessor implements IFileProcessor {
     return documents;
   }
 
-  /**
-   * Simple YAML-like to JSON converter (for demo purposes)
-   * In production, use a proper YAML library like js-yaml
-   */
-  private simpleYamlToJson(yamlText: string): any {
-    try {
-      // Very basic YAML-like parsing - this is just for demonstration
-      // Real implementation should use js-yaml library
-      const lines = yamlText.split('\n').filter(line => line.trim() && !line.trim().startsWith('#'));
-      const result: any = {};
-
-      for (const line of lines) {
-        const colonIndex = line.indexOf(':');
-        if (colonIndex > 0) {
-          const key = line.substring(0, colonIndex).trim();
-          const value = line.substring(colonIndex + 1).trim();
-
-          // Try to parse value as number, boolean, or keep as string
-          if (value === 'true' || value === 'false') {
-            result[key] = value === 'true';
-          } else if (!isNaN(Number(value)) && value !== '') {
-            result[key] = Number(value);
-          } else {
-            result[key] = value;
-          }
-        }
-      }
-
-      return result;
-    } catch {
-      throw new Error('Invalid YAML format');
-    }
-  }
 }

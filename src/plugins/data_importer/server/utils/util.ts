@@ -51,21 +51,37 @@ export const mergeCustomizerForPreview = (objValue: any, srcValue: any) => {
   }
 };
 
-const flattenObject = (obj: Record<string, any>) => {
+const flattenObject = (obj: Record<string, any>, prefix: string = '') => {
   const result: Record<string, any> = {};
+
   for (const key of Object.keys(obj)) {
-    if (obj[key] && typeof obj[key] === 'object') {
-      const nested = flattenObject(obj[key]);
+    const fullKey = prefix ? `${prefix}.${key}` : key;
+    const value = obj[key];
+
+    if (Array.isArray(value)) {
+      // For arrays, we still want to validate the structure
+      // Add the array itself as a field
+      result[fullKey] = value;
+
+      // Also flatten any objects within the array
+      value.forEach((item, index) => {
+        if (item && typeof item === 'object' && !Array.isArray(item)) {
+          const arrayItemFlattened = flattenObject(item, `${fullKey}.${index}`);
+          Object.assign(result, arrayItemFlattened);
+        }
+      });
+    } else if (value && typeof value === 'object') {
+      const nested = flattenObject(value, fullKey);
       if (Object.keys(nested).length === 0) {
-        result[`${key}.`] = null;
-      }
-      for (const nestedKey of Object.keys(nested)) {
-        result[`${key}.${nestedKey}`] = nested[nestedKey];
+        result[`${fullKey}.`] = null;
+      } else {
+        Object.assign(result, nested);
       }
     } else {
-      result[key] = obj[key];
+      result[fullKey] = value;
     }
   }
+
   return result;
 };
 

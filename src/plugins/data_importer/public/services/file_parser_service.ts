@@ -172,6 +172,107 @@ class HARParser extends BaseFileParser {
   }
 }
 
+// TSV Parser
+class TSVParser extends BaseFileParser {
+  constructor() {
+    super(['.tsv']);
+  }
+
+  async parse(file: File, config: FileParserConfig, http: HttpStart): Promise<PreviewResponse> {
+    const { previewFile } = await import('../lib/preview_file');
+    return previewFile({
+      http,
+      file,
+      createMode: config.createMode,
+      fileExtension: config.fileExtension,
+      indexName: config.indexName,
+      previewCount: config.previewCount || 10,
+      delimiter: config.delimiter || '\t', // Default tab delimiter for TSV
+      selectedDataSourceId: config.selectedDataSourceId,
+    });
+  }
+
+  async import(file: File, config: FileParserConfig, http: HttpStart): Promise<ImportResponse> {
+    const { importFile } = await import('../lib/import_file');
+    return importFile({
+      http,
+      file,
+      indexName: config.indexName,
+      createMode: config.createMode,
+      fileExtension: config.fileExtension,
+      delimiter: config.delimiter || '\t', // Default tab delimiter for TSV
+      selectedDataSourceId: config.selectedDataSourceId,
+      mapping: config.mapping,
+    });
+  }
+}
+
+// XML Parser
+class XMLParser extends BaseFileParser {
+  constructor() {
+    super(['.xml']);
+  }
+
+  async parse(file: File, config: FileParserConfig, http: HttpStart): Promise<PreviewResponse> {
+    const { previewFile } = await import('../lib/preview_file');
+    return previewFile({
+      http,
+      file,
+      createMode: config.createMode,
+      fileExtension: config.fileExtension,
+      indexName: config.indexName,
+      previewCount: config.previewCount || 10,
+      selectedDataSourceId: config.selectedDataSourceId,
+    });
+  }
+
+  async import(file: File, config: FileParserConfig, http: HttpStart): Promise<ImportResponse> {
+    const { importFile } = await import('../lib/import_file');
+    return importFile({
+      http,
+      file,
+      indexName: config.indexName,
+      createMode: config.createMode,
+      fileExtension: config.fileExtension,
+      selectedDataSourceId: config.selectedDataSourceId,
+      mapping: config.mapping,
+    });
+  }
+}
+
+// YAML Parser
+class YAMLParser extends BaseFileParser {
+  constructor() {
+    super(['.yaml', '.yml']);
+  }
+
+  async parse(file: File, config: FileParserConfig, http: HttpStart): Promise<PreviewResponse> {
+    const { previewFile } = await import('../lib/preview_file');
+    return previewFile({
+      http,
+      file,
+      createMode: config.createMode,
+      fileExtension: config.fileExtension,
+      indexName: config.indexName,
+      previewCount: config.previewCount || 10,
+      selectedDataSourceId: config.selectedDataSourceId,
+    });
+  }
+
+  async import(file: File, config: FileParserConfig, http: HttpStart): Promise<ImportResponse> {
+    const { importFile } = await import('../lib/import_file');
+    return importFile({
+      http,
+      file,
+      indexName: config.indexName,
+      createMode: config.createMode,
+      fileExtension: config.fileExtension,
+      selectedDataSourceId: config.selectedDataSourceId,
+      mapping: config.mapping,
+    });
+  }
+}
+
 // GROQ Parser - Custom parser for GROQ files
 class GROQParser extends BaseFileParser {
   constructor() {
@@ -218,8 +319,11 @@ export class FileParserService {
   private registerDefaultParsers() {
     this.parsers.push(
       new CSVParser(),
+      new TSVParser(),
       new JSONParser(),
       new TXTParser(),
+      new XMLParser(),
+      new YAMLParser(),
       new HARParser(),
       new GROQParser()
     );
@@ -276,6 +380,14 @@ export class FileParserService {
           return '.ndjson';
         case 'txt':
           return '.txt';
+        case 'tsv':
+          return '.tsv';
+        case 'xml':
+          return '.xml';
+        case 'yaml':
+          return '.yaml';
+        case 'yml':
+          return '.yml';
         case 'groq':
           return '.groq';
         default:
@@ -293,6 +405,13 @@ export class FileParserService {
           return 'application/x-ndjson';
         case 'txt':
           return 'text/plain';
+        case 'tsv':
+          return 'text/tab-separated-values';
+        case 'xml':
+          return 'application/xml';
+        case 'yaml':
+        case 'yml':
+          return 'application/x-yaml';
         case 'groq':
           return 'application/json'; // Treat as JSON for now
         default:

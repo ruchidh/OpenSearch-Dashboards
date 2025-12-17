@@ -133,6 +133,7 @@ export const RedesignedDataImporterPluginApp = ({
                     dataOperations={dataOperations}
                     onBackToUpload={() => actions.setCurrentStep(1)}
                     onClear={handleClear}
+                    onUpdatePreview={dataOperations.updatePreviewWithGroq}
                     canProceedToStep3={validation.canProceedToStep3}
                   />
                 </StepWrapper>

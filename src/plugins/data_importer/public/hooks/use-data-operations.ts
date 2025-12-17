@@ -11,6 +11,7 @@ import { fileParserService, FileParserConfig } from '../services/file_parser_ser
 import { ImportResponse } from '../types';
 import { PublicConfigSchema } from '../../config';
 import { DataImporterActions, DataImporterState } from './use-data-importer-state';
+import { SimpleGROQProcessor } from '../utils/groq-processor';
 
 interface UseDataOperationsProps {
   state: DataImporterState;
@@ -60,6 +61,8 @@ export const useDataOperations = ({
 
       if (response) {
         actions.setFilePreviewData(response);
+        // Store original data for GROQ filtering
+        actions.setOriginalFilePreviewData(response);
 
         // Extract available time fields - check for various date field types
         const timeFieldCandidates = Object.keys(response.predictedMapping?.properties || {}).filter(
@@ -186,8 +189,78 @@ export const useDataOperations = ({
     [state, actions, http, notifications]
   );
 
+  const updatePreviewWithGroq = useCallback(async () => {
+    if (!state.originalFilePreviewData || !state.originalFilePreviewData.documents) {
+      notifications.toasts.addWarning(
+        i18n.translate('dataImporter.groqNoData', {
+          defaultMessage: 'No preview data available to filter',
+        })
+      );
+      return;
+    }
+
+    actions.setIsLoadingPreview(true);
+
+    try {
+      const originalDocuments = state.originalFilePreviewData.documents;
+      const groqQuery = state.groqInput?.trim();
+
+      if (!groqQuery) {
+        // If no GROQ query, show original data
+        actions.setFilePreviewData({
+          ...state.originalFilePreviewData,
+          documents: originalDocuments,
+        });
+        notifications.toasts.addSuccess(
+          i18n.translate('dataImporter.groqClearSuccess', {
+            defaultMessage: 'Preview cleared - showing original data ({count} documents)',
+            values: { count: originalDocuments.length },
+          })
+        );
+        return;
+      }
+
+      // Process GROQ query
+      const result = SimpleGROQProcessor.process(originalDocuments, groqQuery);
+
+      if (result.success) {
+        // Update preview with filtered data, keeping original mapping
+        actions.setFilePreviewData({
+          ...state.originalFilePreviewData,
+          documents: result.data,
+        });
+
+        notifications.toasts.addSuccess(
+          i18n.translate('dataImporter.groqSuccess', {
+            defaultMessage: 'GROQ query applied - {count} documents match the filter',
+            values: { count: result.data.length },
+          })
+        );
+      } else {
+        // Show error but keep current data
+        notifications.toasts.addDanger(
+          i18n.translate('dataImporter.groqError', {
+            defaultMessage: 'GROQ query failed: {error}',
+            values: { error: result.error },
+          })
+        );
+      }
+    } catch (error) {
+      const errorMessage = error.message || 'Unknown error occurred';
+      notifications.toasts.addDanger(
+        i18n.translate('dataImporter.groqProcessingError', {
+          defaultMessage: 'Failed to process GROQ query: {errorMessage}',
+          values: { errorMessage },
+        })
+      );
+    } finally {
+      actions.setIsLoadingPreview(false);
+    }
+  }, [state.originalFilePreviewData, state.groqInput, actions, notifications]);
+
   return {
     previewData,
     importData,
+    updatePreviewWithGroq,
   };
 };

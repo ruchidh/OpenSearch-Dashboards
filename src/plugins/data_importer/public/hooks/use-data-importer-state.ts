@@ -39,6 +39,7 @@ export interface DataImporterState {
 
   // Step 2 state - Data configuration and preview
   filePreviewData: PreviewResponse;
+  originalFilePreviewData: PreviewResponse;
   timeField: string;
   availableTimeFields: string[];
   isLoadingPreview: boolean;
@@ -68,6 +69,7 @@ export interface DataImporterActions {
 
   // Step 2 actions
   setFilePreviewData: (data: PreviewResponse) => void;
+  setOriginalFilePreviewData: (data: PreviewResponse) => void;
   setTimeField: (field: string) => void;
   setAvailableTimeFields: (fields: string[]) => void;
   setIsLoadingPreview: (loading: boolean) => void;
@@ -106,6 +108,10 @@ export const useDataImporterState = (config: PublicConfigSchema) => {
     documents: [],
     predictedMapping: {},
   });
+  const [originalFilePreviewData, setOriginalFilePreviewData] = useState<PreviewResponse>({
+    documents: [],
+    predictedMapping: {},
+  });
   const [timeField, setTimeField] = useState<string>('');
   const [availableTimeFields, setAvailableTimeFields] = useState<string[]>([]);
   const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false);
@@ -129,6 +135,7 @@ export const useDataImporterState = (config: PublicConfigSchema) => {
     setDelimiter(CSV_SUPPORTED_DELIMITERS[0]);
     setShowDelimiterChoice(false);
     setFilePreviewData({ documents: [], predictedMapping: {} });
+    setOriginalFilePreviewData({ documents: [], predictedMapping: {} });
     setImportStats(null);
     setImportErrors([]);
     setTimeField('');
@@ -154,6 +161,7 @@ export const useDataImporterState = (config: PublicConfigSchema) => {
 
     // Step 2 state
     filePreviewData,
+    originalFilePreviewData,
     timeField,
     availableTimeFields,
     isLoadingPreview,
@@ -183,6 +191,7 @@ export const useDataImporterState = (config: PublicConfigSchema) => {
 
     // Step 2 actions
     setFilePreviewData,
+    setOriginalFilePreviewData,
     setTimeField,
     setAvailableTimeFields,
     setIsLoadingPreview,

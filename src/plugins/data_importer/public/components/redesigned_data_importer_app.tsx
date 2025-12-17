@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import { I18nProvider } from '@osd/i18n/react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { EuiPage, EuiPageBody, EuiPageHeader } from '@elastic/eui';
@@ -13,15 +13,9 @@ import { NavigationPublicPluginStart } from '../../../navigation/public';
 import { PLUGIN_ID } from '../../common';
 import { PublicConfigSchema } from '../../config';
 import { DataUploadStep, DataConfigureStep, DataImportCompleteStep } from './steps';
-import { StepProgress } from './step_progress';
-import {
-  useDataImporterState,
-  useFileHandling,
-  useDataSourceManagement,
-  useDataOperations,
-  useValidation,
-} from '../hooks';
-import { createStepConfiguration, createClearHandler } from '../utils/step-utils';
+import { StepWrapper } from './step_wrapper';
+import { useDataImporterState, useFileHandling, useDataOperations, useValidation } from '../hooks';
+import { createClearHandler } from '../utils/step-utils';
 import './redesigned_data_importer.scss';
 
 interface RedesignedDataImporterPluginAppProps {
@@ -29,7 +23,6 @@ interface RedesignedDataImporterPluginAppProps {
   notifications: CoreStart['notifications'];
   http: CoreStart['http'];
   savedObjects: CoreStart['savedObjects'];
-  application: CoreStart['application'];
   navigation: NavigationPublicPluginStart;
   config: PublicConfigSchema;
   hideLocalCluster: boolean;
@@ -41,7 +34,6 @@ export const RedesignedDataImporterPluginApp = ({
   basename,
   notifications,
   http,
-  application,
   navigation,
   config,
   savedObjects,
@@ -54,18 +46,6 @@ export const RedesignedDataImporterPluginApp = ({
 
   // Initialize file handling logic
   const fileHandling = useFileHandling(state, actions);
-
-  // Initialize data source management
-  const dataSourceManagement_ = useDataSourceManagement({
-    state,
-    actions,
-    http,
-    savedObjects,
-    notifications,
-    dataSourceEnabled,
-    hideLocalCluster,
-    dataSourceManagement,
-  });
 
   // Initialize data operations
   const dataOperations = useDataOperations({
@@ -84,38 +64,11 @@ export const RedesignedDataImporterPluginApp = ({
     dataSourceEnabled,
   });
 
-  // Create step configuration
-  const steps = createStepConfiguration(state.currentStep);
-
   // Create clear handler
   const handleClear = createClearHandler(
     actions.setCurrentStep,
     actions.setIndexName,
     actions.setFilePreviewData
-  );
-
-  // Create time field change handler
-  const handleTimeFieldChange = useCallback(
-    (selected: Array<{ label: string }>) => {
-      actions.setTimeField(selected[0]?.label || '');
-    },
-    [actions]
-  );
-
-  // Create import handler with fetch indices callback
-  const handleImport = useCallback(() => {
-    // Create a simple fetchIndices function for the import operation
-    const fetchIndices = async () => {
-      // This is handled automatically by the useEffect in useDataSourceManagement
-      // No need to do anything here as indices are already being fetched
-    };
-    dataOperations.importData(fetchIndices);
-  }, [dataOperations]);
-
-  // Render step progress indicator
-  const renderStepProgress = useCallback(
-    () => <StepProgress steps={steps} currentStep={state.currentStep} />,
-    [steps, state.currentStep]
   );
 
   return (
@@ -127,61 +80,74 @@ export const RedesignedDataImporterPluginApp = ({
           <EuiPage paddingSize="s">
             <EuiPageBody component="main">
               {state.currentStep === 1 && (
-                <DataUploadStep
-                  config={config}
-                  indexName={state.indexName}
-                  inputFile={state.inputFile}
-                  textInput={state.textInput}
-                  textFileType={state.textFileType}
-                  indexOptions={state.indexOptions}
-                  delimiter={state.delimiter}
-                  showDelimiterChoice={state.showDelimiterChoice}
-                  isLoadingPreview={state.isLoadingPreview}
-                  onIndexNameChange={dataSourceManagement_.onIndexNameChange}
-                  onCreateIndexName={dataSourceManagement_.onCreateIndexName}
-                  onFileChange={fileHandling.onFileChange}
-                  onTextInputChange={fileHandling.onTextInputChange}
-                  onTextFileTypeChange={fileHandling.onTextFileTypeChange}
-                  onDelimiterChange={fileHandling.onDelimiterChange}
-                  onPreviewClick={dataOperations.previewData}
-                  canProceedToStep2={validation.canProceedToStep2}
-                  renderDataSourceComponent={dataSourceManagement_.renderDataSourceComponent}
-                  renderStepProgress={renderStepProgress}
-                />
+                <StepWrapper currentStep={state.currentStep}>
+                  <DataUploadStep
+                    config={config}
+                    indexName={state.indexName}
+                    inputFile={state.inputFile}
+                    textInput={state.textInput}
+                    textFileType={state.textFileType}
+                    indexOptions={state.indexOptions}
+                    delimiter={state.delimiter}
+                    showDelimiterChoice={state.showDelimiterChoice}
+                    isLoadingPreview={state.isLoadingPreview}
+                    fileOperations={fileHandling}
+                    dataOperations={{
+                      previewData: dataOperations.previewData,
+                    }}
+                    actions={{
+                      setDataSourceId: actions.setDataSourceId,
+                      setDataSourceName: actions.setDataSourceName,
+                      setIndexName: actions.setIndexName,
+                      setCreateMode: actions.setCreateMode,
+                      setIndexOptions: actions.setIndexOptions,
+                    }}
+                    http={http}
+                    savedObjects={savedObjects}
+                    notifications={notifications}
+                    dataSourceEnabled={dataSourceEnabled}
+                    hideLocalCluster={hideLocalCluster}
+                    dataSourceManagement={dataSourceManagement}
+                    dataSourceId={state.dataSourceId}
+                    dataSourceName={state.dataSourceName}
+                    canProceedToStep2={validation.canProceedToStep2}
+                  />
+                </StepWrapper>
               )}
               {state.currentStep === 2 && (
-                <DataConfigureStep
-                  dataSourceName={state.dataSourceName}
-                  dataSourceEnabled={dataSourceEnabled}
-                  indexName={state.indexName}
-                  timeField={state.timeField}
-                  availableTimeFields={state.availableTimeFields}
-                  filePreviewData={state.filePreviewData}
-                  isLoadingPreview={state.isLoadingPreview}
-                  isImporting={state.isImporting}
-                  groqInput={state.groqInput}
-                  delimiter={state.delimiter}
-                  showDelimiterChoice={state.showDelimiterChoice}
-                  onBackToUpload={() => actions.setCurrentStep(1)}
-                  onClear={handleClear}
-                  onImport={handleImport}
-                  onTimeFieldChange={handleTimeFieldChange}
-                  onGroqInputChange={actions.setGroqInput}
-                  canProceedToStep3={validation.canProceedToStep3}
-                  renderStepProgress={renderStepProgress}
-                />
+                <StepWrapper currentStep={state.currentStep}>
+                  <DataConfigureStep
+                    dataSourceName={state.dataSourceName}
+                    dataSourceEnabled={dataSourceEnabled}
+                    indexName={state.indexName}
+                    timeField={state.timeField}
+                    availableTimeFields={state.availableTimeFields}
+                    filePreviewData={state.filePreviewData}
+                    isLoadingPreview={state.isLoadingPreview}
+                    isImporting={state.isImporting}
+                    groqInput={state.groqInput}
+                    actions={{
+                      setTimeField: actions.setTimeField,
+                      setGroqInput: actions.setGroqInput,
+                    }}
+                    dataOperations={dataOperations}
+                    onBackToUpload={() => actions.setCurrentStep(1)}
+                    onClear={handleClear}
+                    canProceedToStep3={validation.canProceedToStep3}
+                  />
+                </StepWrapper>
               )}
               {state.currentStep === 3 && (
-                <DataImportCompleteStep
-                  indexName={state.indexName}
-                  importStats={state.importStats}
-                  filePreviewData={state.filePreviewData}
-                  importErrors={state.importErrors}
-                  onRestart={actions.resetWorkflow}
-                  application={application}
-                  http={http}
-                  renderStepProgress={renderStepProgress}
-                />
+                <StepWrapper currentStep={state.currentStep}>
+                  <DataImportCompleteStep
+                    indexName={state.indexName}
+                    importStats={state.importStats}
+                    filePreviewData={state.filePreviewData}
+                    importErrors={state.importErrors}
+                    onRestart={actions.resetWorkflow}
+                    http={http}
+                  />
+                </StepWrapper>
               )}
             </EuiPageBody>
           </EuiPage>

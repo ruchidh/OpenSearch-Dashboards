@@ -20,9 +20,7 @@ import { DelimiterSelect } from '../delimiter_select';
 import { ImportTextContentBody } from '../import_text_content';
 import { PublicConfigSchema } from '../../../config';
 import { CoreStart } from '../../../../../core/public';
-import {
-  DataSourceManagementPluginSetup,
-} from '../../../../data_source_management/public';
+import { DataSourceManagementPluginSetup } from '../../../../data_source_management/public';
 import { useUploadMethod, useDataSourceSelector, useIndexManagement } from '../../hooks';
 
 interface DataUploadStepProps {
@@ -222,13 +220,13 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
       <EuiTitle size="s">
         <h3>Configure destination</h3>
       </EuiTitle>
-      <EuiSpacer size="s" />
+      <EuiSpacer size="m" />
 
       {/* Data Source Selection */}
-      <EuiFormRow label="Data source" fullWidth>
+      <EuiFormRow fullWidth>
         <div>{renderDataSourceComponent}</div>
       </EuiFormRow>
-      <EuiSpacer size="s" />
+      <EuiSpacer size="m" />
 
       {/* Index Selection */}
       <EuiFormRow label="Select an existing index or create new" fullWidth>
@@ -243,7 +241,7 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
         />
       </EuiFormRow>
 
-      <EuiSpacer size="s" />
+      <EuiSpacer size="m" />
 
       {/* Next Button */}
       <EuiFlexGroup justifyContent="flexEnd">

@@ -23,7 +23,6 @@ export const renderApp = (
       basename={appBasePath}
       notifications={notifications}
       http={http}
-      application={application}
       navigation={navigation}
       config={config}
       savedObjects={savedObjects}

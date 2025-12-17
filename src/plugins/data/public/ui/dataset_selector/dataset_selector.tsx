@@ -130,13 +130,6 @@ export const DatasetSelector = ({
 
   const closePopover = useCallback(() => setIsOpen(false), []);
 
-  const handleImportData = useCallback(() => {
-    closePopover();
-    if (application) {
-      application.navigateToApp('dataImporter');
-    }
-  }, [closePopover, application]);
-
   const options = useMemo(() => {
     const buildDatasetOptions = (
       groupLabel: string,
@@ -306,23 +299,6 @@ export const DatasetSelector = ({
               <FormattedMessage
                 id="data.datasetSelector.advancedButton"
                 defaultMessage="View all available data"
-              />
-            </EuiButton>
-          </EuiFlexItem>
-          <EuiFlexItem>
-            <EuiButton
-              className="datasetSelector__importButton"
-              data-test-subj="datasetSelectorImportButton"
-              iconType="importAction"
-              iconSide="right"
-              iconSize="s"
-              size="s"
-              color="primary"
-              onClick={handleImportData}
-            >
-              <FormattedMessage
-                id="data.datasetSelector.importButton"
-                defaultMessage="Import Data"
               />
             </EuiButton>
           </EuiFlexItem>

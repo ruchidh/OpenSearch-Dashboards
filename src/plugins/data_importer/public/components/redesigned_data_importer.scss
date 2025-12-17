@@ -4,7 +4,6 @@
  */
 
 .redesigned-data-importer {
-  height: calc(100vh - 100px); // Account for navigation and page header
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -26,7 +25,6 @@
   // Wizard Step Container
   .wizard-step-container {
     background-color: white;
-    max-width: 1200px;
     flex: 1;
     overflow: hidden;
     padding: 8px;
@@ -38,6 +36,7 @@
 
   // Step progress indicator
   .step-progress-container {
+    margin-top: 20px;
 
     .step-indicator {
       text-align: center;

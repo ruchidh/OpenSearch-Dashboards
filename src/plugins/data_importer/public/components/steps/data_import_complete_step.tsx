@@ -49,19 +49,42 @@ export const DataImportCompleteStep: React.FC<DataImportCompleteStepProps> = ({
   onRestart,
   http,
 }) => {
-  const redirectToExplore = () => {
-    // Get current workspace ID from URL
-    const currentWorkspaceId = getWorkspaceIdFromUrl(window.location.href, http.basePath.get());
+  // Determine if we're in a workspace
+  const currentWorkspaceId = getWorkspaceIdFromUrl(window.location.href, http.basePath.get());
+  const isInWorkspace = !!currentWorkspaceId;
 
-    if (currentWorkspaceId) {
-      // If in workspace, navigate to explore/logs within that workspace
+  // Check if explore app is available
+  const isExploreAvailable = () => {
+    // try {
+    //   // Check if explore app is registered by trying to access the application registry
+    //   // This is a runtime check to see if the explore plugin is enabled
+    //   const applications = (window as any).OSDApplications || {};
+    //   return 'explore' in applications || 'explore/logs' in applications;
+    // } catch {
+    //   return false;
+    // }
+    //Todo: Find flag which checks explore enabled or not
+    return true;
+  };
+
+  const redirectToExplore = () => {
+    const exploreEnabled = isExploreAvailable();
+
+    if (currentWorkspaceId && exploreEnabled) {
+      // If in workspace and explore is available, navigate to explore/logs
       const targetUrl = `${
         window.location.origin
       }${http.basePath.get()}/w/${currentWorkspaceId}/app/explore/logs#/`;
       window.location.href = targetUrl;
+    } else if (currentWorkspaceId && !exploreEnabled) {
+      // If in workspace but explore not available, fall back to discover
+      const targetUrl = `${
+        window.location.origin
+      }${http.basePath.get()}/w/${currentWorkspaceId}/app/discover`;
+      window.location.href = targetUrl;
     } else {
-      // If outside workspace (like from Data Administration), navigate to standard Discover
-      const targetUrl = `${window.location.origin}${http.basePath.get()}/app/discover`;
+      // If outside workspace, navigate to workspace list
+      const targetUrl = `${window.location.origin}${http.basePath.get()}/app/workspace_list#/`;
       window.location.href = targetUrl;
     }
   };
@@ -88,10 +111,6 @@ export const DataImportCompleteStep: React.FC<DataImportCompleteStepProps> = ({
                     description: importStats.totalDocs.toLocaleString(),
                   },
                   {
-                    title: 'File Size',
-                    description: importStats.indexSize,
-                  },
-                  {
                     title: 'Completed At',
                     description: importStats.timestamp,
                   },
@@ -110,7 +129,7 @@ export const DataImportCompleteStep: React.FC<DataImportCompleteStepProps> = ({
               </EuiFlexItem>
               <EuiFlexItem>
                 <EuiButton fill size="s" onClick={redirectToExplore}>
-                  Explore in Discover
+                  {isInWorkspace ? 'Explore in Discover' : 'Explore in Workspace'}
                 </EuiButton>
               </EuiFlexItem>
             </EuiFlexGroup>

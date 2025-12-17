@@ -112,6 +112,19 @@ export const DatasetExplorer = ({
                       defaultMessage="Manage data sources"
                     />
                   </EuiLink>
+                  <FormattedMessage
+                    id="data.explorer.datasetSelector.advancedSelector.title.step1.or"
+                    defaultMessage=" or "
+                  />
+                  <EuiLink
+                    href={`${services.http.basePath.get()}/app/dataImporter`}
+                    target="_blank"
+                  >
+                    <FormattedMessage
+                      id="data.explorer.datasetSelector.advancedSelector.dataSourceManagement.title.dataImport"
+                      defaultMessage="Import Data"
+                    />
+                  </EuiLink>
                 </p>
               </EuiText>
             </EuiModalHeaderTitle>

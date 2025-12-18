@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   EuiTitle,
   EuiSpacer,
@@ -18,10 +18,13 @@ import {
 } from '@elastic/eui';
 import { DelimiterSelect } from '../delimiter_select';
 import { ImportTextContentBody } from '../import_text_content';
+import { MappingConflictsBanner } from '../mapping_conflicts_banner';
+import { MappingConflictsModal } from '../mapping_conflicts_modal';
 import { PublicConfigSchema } from '../../../config';
 import { CoreStart } from '../../../../../core/public';
 import { DataSourceManagementPluginSetup } from '../../../../data_source_management/public';
 import { useUploadMethod, useDataSourceSelector, useIndexManagement } from '../../hooks';
+import { MappingConflict } from '../../types';
 
 interface DataUploadStepProps {
   // Configuration
@@ -53,6 +56,7 @@ interface DataUploadStepProps {
   };
   dataOperations: {
     previewData: () => void;
+    clearConflicts: () => void;
   };
 
   // Services
@@ -69,6 +73,9 @@ interface DataUploadStepProps {
 
   // Validation
   canProceedToStep2: boolean;
+
+  // Mapping conflicts
+  mappingConflicts?: MappingConflict[];
 }
 
 export const DataUploadStep: React.FC<DataUploadStepProps> = ({
@@ -93,7 +100,10 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
   dataSourceId,
   dataSourceName,
   canProceedToStep2,
+  mappingConflicts,
 }) => {
+  // Modal state for mapping conflicts
+  const [isConflictsModalOpen, setIsConflictsModalOpen] = useState(false);
   // Upload method management
   const {
     uploadMethod,
@@ -135,6 +145,15 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
 
   return (
     <div>
+      {/* Mapping conflicts banner */}
+      {mappingConflicts && mappingConflicts.length > 0 && (
+        <MappingConflictsBanner
+          conflicts={mappingConflicts}
+          onViewConflicts={() => setIsConflictsModalOpen(true)}
+          onClearConflicts={dataOperations.clearConflicts}
+        />
+      )}
+
       <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
         <EuiFlexItem grow={false}>
           <EuiTitle size="xs">
@@ -259,6 +278,13 @@ export const DataUploadStep: React.FC<DataUploadStepProps> = ({
           </EuiButton>
         </EuiFlexItem>
       </EuiFlexGroup>
+
+      {/* Mapping conflicts modal */}
+      <MappingConflictsModal
+        isOpen={isConflictsModalOpen}
+        onClose={() => setIsConflictsModalOpen(false)}
+        conflicts={mappingConflicts || []}
+      />
     </div>
   );
 };

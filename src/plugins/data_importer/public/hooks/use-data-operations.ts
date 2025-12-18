@@ -8,10 +8,83 @@ import { extname } from 'path';
 import { i18n } from '@osd/i18n';
 import { CoreStart } from '../../../../core/public';
 import { fileParserService, FileParserConfig } from '../services/file_parser_service';
-import { ImportResponse } from '../types';
+import { ImportResponse, MappingConflict, PreviewResponse } from '../types';
 import { PublicConfigSchema } from '../../config';
 import { DataImporterActions, DataImporterState } from './use-data-importer-state';
 import { SimpleGROQProcessor } from '../utils/groq-processor';
+
+// Helper function to recursively compare mapping properties
+const compareProperties = (
+  existingProps: any,
+  predictedProps: any,
+  parentPath: string = ''
+): MappingConflict[] => {
+  const conflicts: MappingConflict[] = [];
+
+  Object.keys(predictedProps).forEach((fieldName) => {
+    const fullFieldPath = parentPath ? `${parentPath}.${fieldName}` : fieldName;
+
+    if (existingProps[fieldName]) {
+      const existingField = existingProps[fieldName];
+      const predictedField = predictedProps[fieldName];
+
+      const existingType = existingField.type;
+      const predictedType = predictedField.type;
+
+      // Check for direct type conflicts
+      if (existingType !== predictedType) {
+        conflicts.push({
+          fieldName: fullFieldPath,
+          uploadedType: predictedType,
+          destinationType: existingType,
+        });
+      }
+      // If both are objects, recursively check their properties
+      else if (existingType === 'object' && predictedType === 'object') {
+        if (existingField.properties && predictedField.properties) {
+          const nestedConflicts = compareProperties(
+            existingField.properties,
+            predictedField.properties,
+            fullFieldPath
+          );
+          conflicts.push(...nestedConflicts);
+        }
+      }
+      // Handle nested properties case where one has nested properties and other doesn't
+      else if (existingField.properties && predictedField.properties && existingType === predictedType) {
+        const nestedConflicts = compareProperties(
+          existingField.properties,
+          predictedField.properties,
+          fullFieldPath
+        );
+        conflicts.push(...nestedConflicts);
+      }
+    }
+  });
+
+  return conflicts;
+};
+
+// Helper function to detect mapping conflicts
+const detectMappingConflicts = (response: PreviewResponse): PreviewResponse => {
+  // If no existing mapping, there are no conflicts
+  if (!response.existingMapping?.properties || !response.predictedMapping?.properties) {
+    return response;
+  }
+
+  const existingProps = response.existingMapping.properties;
+  const predictedProps = response.predictedMapping.properties;
+
+  // Use recursive comparison to detect conflicts at all levels
+  const conflicts = compareProperties(existingProps, predictedProps);
+
+  // Return enhanced response with conflict information
+  return {
+    ...response,
+    hasConflicts: conflicts.length > 0,
+    mappingConflicts: conflicts,
+  };
+};
 
 interface UseDataOperationsProps {
   state: DataImporterState;
@@ -57,9 +130,12 @@ export const useDataOperations = ({
         previewCount: config.filePreviewDocumentsCount,
       };
 
-      const response = await fileParserService.parseFile(fileToProcess, parserConfig, http);
+      const rawResponse = await fileParserService.parseFile(fileToProcess, parserConfig, http);
 
-      if (response) {
+      if (rawResponse) {
+        // Detect mapping conflicts before processing
+        const response = detectMappingConflicts(rawResponse);
+
         actions.setFilePreviewData(response);
         // Store original data for GROQ filtering
         actions.setOriginalFilePreviewData(response);
@@ -88,15 +164,32 @@ export const useDataOperations = ({
           actions.setTimeField(preferredField);
         }
 
-        notifications.toasts.addSuccess(
-          i18n.translate('dataImporter.previewSuccess', {
-            defaultMessage: 'Preview successful - {count} documents loaded',
-            values: { count: response.documents.length },
-          })
-        );
+        // Check for mapping conflicts
+        if (response.hasConflicts && response.mappingConflicts && response.mappingConflicts.length > 0) {
+          // Stay on Step 1 and show conflicts - DO NOT proceed to step 2
+          notifications.toasts.addWarning(
+            i18n.translate('dataImporter.previewConflicts', {
+              defaultMessage: 'Preview loaded with mapping conflicts - {count} conflicts found. Resolve conflicts to proceed.',
+              values: { count: response.mappingConflicts.length },
+            })
+          );
 
-        // Automatically proceed to Step 2 after successful preview
-        actions.setCurrentStep(2);
+          // Ensure we stay on step 1
+          actions.setCurrentStep(1);
+
+          // Scroll to top to show the conflict banner
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          notifications.toasts.addSuccess(
+            i18n.translate('dataImporter.previewSuccess', {
+              defaultMessage: 'Preview successful - {count} documents loaded',
+              values: { count: response.documents.length },
+            })
+          );
+
+          // Only proceed to Step 2 if no conflicts
+          actions.setCurrentStep(2);
+        }
       }
     } catch (error) {
       const errorMessage = error.body?.message ?? error;
@@ -258,9 +351,22 @@ export const useDataOperations = ({
     }
   }, [state.originalFilePreviewData, state.groqInput, actions, notifications]);
 
+  const clearConflicts = useCallback(() => {
+    // Clear all preview data to reset conflicts and allow user to reupload
+    actions.setFilePreviewData({ documents: [], predictedMapping: {} });
+    actions.setOriginalFilePreviewData({ documents: [], predictedMapping: {} });
+
+    notifications.toasts.addSuccess(
+      i18n.translate('dataImporter.conflictsCleared', {
+        defaultMessage: 'Conflicts cleared. You can now upload a new file or select a different index.',
+      })
+    );
+  }, [actions, notifications]);
+
   return {
     previewData,
     importData,
     updatePreviewWithGroq,
+    clearConflicts,
   };
 };

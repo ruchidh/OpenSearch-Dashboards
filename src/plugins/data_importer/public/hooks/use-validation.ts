@@ -51,7 +51,27 @@ export const useValidation = ({
     const hasValidText = Boolean(state.textInput && state.textInput.trim() && state.textInput.length <= config.maxTextCount);
     const hasValidData = hasValidFile || hasValidText;
     const hasValidDataSource = !dataSourceEnabled || Boolean(state.dataSourceId || state.dataSourceName);
-    const canProceedToStep2 = hasValidIndex && hasValidData && hasValidDataSource;
+
+    // Check if we have a successful predicted mapping (for internal validation)
+    const hasSuccessfulPreview = Boolean(
+      state.filePreviewData.predictedMapping &&
+      Object.keys(state.filePreviewData.predictedMapping).length > 0 &&
+      state.filePreviewData.documents &&
+      state.filePreviewData.documents.length > 0
+    );
+
+    // Check if conflicts exist after API response
+    const hasActiveConflicts = Boolean(
+      state.filePreviewData.hasConflicts &&
+      state.filePreviewData.mappingConflicts &&
+      state.filePreviewData.mappingConflicts.length > 0
+    );
+
+    // Basic validation for enabling "Next" button initially (before API call)
+    const hasBasicRequirements = hasValidIndex && hasValidData && hasValidDataSource;
+
+    // Full validation: either no preview yet (allow API call) OR successful preview with no conflicts
+    const canProceedToStep2 = hasBasicRequirements && (!hasSuccessfulPreview || !hasActiveConflicts);
     const canProceedToStep3 = state.filePreviewData.documents.length > 0;
 
     return {
@@ -60,6 +80,9 @@ export const useValidation = ({
       hasValidText,
       hasValidData,
       hasValidDataSource,
+      hasSuccessfulPreview,
+      hasActiveConflicts,
+      hasBasicRequirements,
       canProceedToStep2,
       canProceedToStep3,
     };
@@ -69,7 +92,10 @@ export const useValidation = ({
     state.textInput,
     state.dataSourceId,
     state.dataSourceName,
-    state.filePreviewData.documents.length,
+    state.filePreviewData.documents,
+    state.filePreviewData.predictedMapping,
+    state.filePreviewData.hasConflicts,
+    state.filePreviewData.mappingConflicts,
     config.maxFileSizeBytes,
     config.maxTextCount,
     dataSourceEnabled,

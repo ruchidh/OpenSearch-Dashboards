@@ -30,10 +30,18 @@ export interface ImportResponse {
   success: boolean;
 }
 
+export interface MappingConflict {
+  fieldName: string;
+  uploadedType: string;
+  destinationType: string;
+}
+
 export interface PreviewResponse {
   predictedMapping: Record<string, any>;
   documents: Array<Record<string, any>>;
   existingMapping?: Record<string, any>;
+  mappingConflicts?: MappingConflict[];
+  hasConflicts?: boolean;
 }
 
 export interface CatIndicesResponse {

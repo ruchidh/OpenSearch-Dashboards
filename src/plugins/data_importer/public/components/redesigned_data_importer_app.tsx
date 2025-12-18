@@ -94,6 +94,7 @@ export const RedesignedDataImporterPluginApp = ({
                     fileOperations={fileHandling}
                     dataOperations={{
                       previewData: dataOperations.previewData,
+                      clearConflicts: dataOperations.clearConflicts,
                     }}
                     actions={{
                       setDataSourceId: actions.setDataSourceId,
@@ -111,6 +112,7 @@ export const RedesignedDataImporterPluginApp = ({
                     dataSourceId={state.dataSourceId}
                     dataSourceName={state.dataSourceName}
                     canProceedToStep2={validation.canProceedToStep2}
+                    mappingConflicts={state.filePreviewData.mappingConflicts}
                   />
                 </StepWrapper>
               )}

@@ -15,7 +15,6 @@ import {
   EuiCallOut,
 } from '@elastic/eui';
 import { CoreStart } from 'opensearch-dashboards/public';
-import { getWorkspaceIdFromUrl } from '../../../../../core/public/utils';
 import { EnhancedPreviewComponent } from '../enhanced_preview_table';
 import { PreviewResponse } from '../../types';
 
@@ -50,39 +49,29 @@ export const DataImportCompleteStep: React.FC<DataImportCompleteStepProps> = ({
   http,
 }) => {
   // Determine if we're in a workspace
-  const currentWorkspaceId = getWorkspaceIdFromUrl(window.location.href, http.basePath.get());
+  // Extract workspace ID directly from pathname since basePath includes workspace context
+  const workspaceMatch = window.location.pathname.match(/\/w\/([^\/]+)/);
+  const currentWorkspaceId = workspaceMatch ? workspaceMatch[1] : '';
   const isInWorkspace = !!currentWorkspaceId;
 
-  // Check if explore app is available
-  const isExploreAvailable = () => {
-    // try {
-    //   // Check if explore app is registered by trying to access the application registry
-    //   // This is a runtime check to see if the explore plugin is enabled
-    //   const applications = (window as any).OSDApplications || {};
-    //   return 'explore' in applications || 'explore/logs' in applications;
-    // } catch {
-    //   return false;
-    // }
-    //Todo: Find flag which checks explore enabled or not
-    return true;
-  };
 
   const redirectToExplore = () => {
-    const exploreEnabled = isExploreAvailable();
-
-    if (currentWorkspaceId && exploreEnabled) {
+    console.log(currentWorkspaceId, 'currentWorkspaceId');
+    if (currentWorkspaceId) {
       // If in workspace and explore is available, navigate to explore/logs
-      const targetUrl = `${
-        window.location.origin
-      }${http.basePath.get()}/w/${currentWorkspaceId}/app/explore/logs#/`;
+      // Extract server base path (remove workspace part from basePath)
+      const serverBasePath = http.basePath.get().replace(/\/w\/[^\/]*/, '');
+      const targetUrl = `${window.location.origin}${serverBasePath}/w/${currentWorkspaceId}/app/explore/logs#/`;
       window.location.href = targetUrl;
-    } else if (currentWorkspaceId && !exploreEnabled) {
-      // If in workspace but explore not available, fall back to discover
-      const targetUrl = `${
-        window.location.origin
-      }${http.basePath.get()}/w/${currentWorkspaceId}/app/discover`;
-      window.location.href = targetUrl;
-    } else {
+    }
+    // else if (currentWorkspaceId && !exploreEnabled) {
+    //   // If in workspace but explore not available, fall back to discover
+    //   const targetUrl = `${
+    //     window.location.origin
+    //   }${http.basePath.get()}/w/${currentWorkspaceId}/app/discover`;
+    //   window.location.href = targetUrl;
+    // }
+    else {
       // If outside workspace, navigate to workspace list
       const targetUrl = `${window.location.origin}${http.basePath.get()}/app/workspace_list#/`;
       window.location.href = targetUrl;
@@ -124,12 +113,12 @@ export const DataImportCompleteStep: React.FC<DataImportCompleteStepProps> = ({
             <EuiFlexGroup>
               <EuiFlexItem>
                 <EuiButton color="success" size="s" onClick={onRestart}>
-                  Restart
+                  Import more data
                 </EuiButton>
               </EuiFlexItem>
               <EuiFlexItem>
                 <EuiButton fill size="s" onClick={redirectToExplore}>
-                  {isInWorkspace ? 'Explore in Discover' : 'Explore in Workspace'}
+                  {isInWorkspace ? 'View in Discover Logs' : 'Explore in Workspace'}
                 </EuiButton>
               </EuiFlexItem>
             </EuiFlexGroup>
